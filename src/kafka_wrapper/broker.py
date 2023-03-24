@@ -117,11 +117,12 @@ class Broker(KafkaResource):
         """
         metadata = self._admin_client.list_topics(timeout=self._timeout)
 
-        if not broker_ids:
-            resources = [ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id, md in metadata.brokers.items()]
-        else:
+        if broker_ids:
             resources = [ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id in broker_ids]
-
+        else:
+            # get all kafka broker ids
+            resources = [ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id, md in metadata.brokers.items()]
+            
         for resource in resources:
             for k, v in config.items():
                 resource.set_config(k, v, overwrite=overwrite)
