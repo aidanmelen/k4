@@ -13,7 +13,7 @@ def get_logger(log_level="NOTSET"):
         than `log_level` to the console.
     """
     # create logger
-    logger = logging.getLogger("kafkactl")
+    logger = logging.getLogger("k4")
     log_level_number = logging.getLevelName(log_level.upper())
     logger.setLevel(log_level_number)
 
