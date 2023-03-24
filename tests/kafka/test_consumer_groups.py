@@ -4,7 +4,7 @@ from confluent_kafka import ConsumerGroupState, TopicPartition
 from kafka_wrapper.consumer_group import ConsumerGroup
 
 
-def test_group_does_have_topic_assignments(admin_client, kafka_consumer_group):
+def test_group_does_have_any_topic_assignments(admin_client, kafka_consumer_group):
     with patch(
         "kafka_wrapper.consumer_group.ConsumerGroup.describe"
     ) as mock_kafka_consumer_group_describe:
@@ -17,10 +17,11 @@ def test_group_does_have_topic_assignments(admin_client, kafka_consumer_group):
                     {
                         "assignments": [
                             {
+                                # the group has at least one topic assignment match
                                 "topic": topic_names[0],
                             },
                             {
-                                "topic": topic_names[1],
+                                "topic": "my.other.topic",
                             },
                         ]
                     }
@@ -28,11 +29,11 @@ def test_group_does_have_topic_assignments(admin_client, kafka_consumer_group):
             }
         }
 
-        results = kafka_consumer_group.has_topic_assignments(group_id, topic_names)
+        results = kafka_consumer_group.has_any_topic_assignments(group_id, topic_names)
         assert results
 
 
-def test_group_does_not_have_topic_assignments(admin_client, kafka_consumer_group):
+def test_group_does_not_have_any_topic_assignments(admin_client, kafka_consumer_group):
     with patch(
         "kafka_wrapper.consumer_group.ConsumerGroup.describe"
     ) as mock_kafka_consumer_group_describe:
@@ -45,15 +46,18 @@ def test_group_does_not_have_topic_assignments(admin_client, kafka_consumer_grou
                     {
                         "assignments": [
                             {
-                                "topic": topic_names[0],
+                                "topic": "my.other.topic",
+                            },
+                            {
+                                "topic": "another.topic",
                             }
-                            # Does not have topic2
+                            # the group has no topic assignment matches
                         ]
                     }
                 ]
             }
         }
-        results = kafka_consumer_group.has_topic_assignments(group_id, topic_names)
+        results = kafka_consumer_group.has_any_topic_assignments(group_id, topic_names)
         assert not results  # does not have all topics (e.g topic1 and topic2)
 
 
