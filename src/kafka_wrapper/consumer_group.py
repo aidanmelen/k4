@@ -17,9 +17,9 @@ class ConsumerGroup(KafkaResource):
             admin_client_config=admin_client_config, timeout=timeout, log_level=log_level
         )
 
-    def has_topic_assignments(self, group_id, topics):
+    def has_any_topic_assignments(self, group_id, topics):
         """
-        Checks whether the Consumer Group is assigned to all specified topics.
+        Checks whether the Consumer Group is assigned to any specified topics.
         """
         result = False
         groups_metadata = self.describe(group_ids=[group_id])
@@ -27,7 +27,9 @@ class ConsumerGroup(KafkaResource):
 
         for m in md.get("members", []):
             for a in m.get("assignments", []):
-                result = a.get("topic") in topics:
+                if a.get("topic") in topics:
+                    result = True
+                    break
         
         return result
 
@@ -50,7 +52,7 @@ class ConsumerGroup(KafkaResource):
         consumer_groups = []
         for group in groups.valid:
 
-            if topics and not self.has_topic_assignments(group.group_id, topics):
+            if topics and not self.has_any_topic_assignments(group.group_id, topics):
                 continue
 
             if only_high_level and group.is_simple_consumer_group:
