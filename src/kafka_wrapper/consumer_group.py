@@ -27,10 +27,8 @@ class ConsumerGroup(KafkaResource):
 
         for m in md.get("members", []):
             for a in m.get("assignments", []):
-                if a.get("topic") in topics:
-                    result = True
-                else:
-                    return False
+                result = a.get("topic") in topics:
+        
         return result
 
     def list(self, only_stable=False, only_high_level=False, topics=[]):
