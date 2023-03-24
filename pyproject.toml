@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "k4"
+version = "0.1.0"
+description = "A command line tool for controlling and interacting with Kafka."
+authors = ["Aidan Melen <aidan-melen@protonmail.com>"]
+readme = "README.md"
+homepage = "https://github.com/aidanmelen/kafkactl-py"
+repository = "https://github.com/aidanmelen/kafkactl-py"
+license = "MIT"
+packages = [{include = "cli", from = "src"}, {include = "kafka_wrapper", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+confluent-kafka = "^2.0.2"
+tabulate = "^0.9.0"
+pyyaml = "^6.0"
+
+[tool.poetry.group.test.dependencies]
+mock = "^4.0.3"
+pytest = "^7.2.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.scripts]
+k4 = "cli.main:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

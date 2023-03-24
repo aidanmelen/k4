@@ -1,0 +1,15 @@
+ARG VERSION=latest \
+    PYTHON_VERSION=3.11 \
+    POETRY_VERSION=1.3.1 \
+    DEBIAN_FRONTEND=noninteractive
+FROM python:${PYTHON_VERSION} AS release
+ENV TERM=xterm-256color
+RUN pip install --upgrade pip \
+    && pip install poetry${POETRY_VERSION+==$POETRY_VERSION} \
+    && apt-get update && apt-get install vim jq -y
+WORKDIR /app
+RUN mkdir -p /app
+COPY . .
+RUN poetry install --no-interaction --no-ansi
+ENTRYPOINT ["poetry", "run"]
+CMD ["bash"]
