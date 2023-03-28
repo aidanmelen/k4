@@ -2,7 +2,9 @@ from kafka_wrapper.consumer_group import ConsumerGroup
 import json
 
 
-consumer_group = ConsumerGroup({"bootstrap.servers": "kafka:9092"}, timeout=5)
+admin_client_config = {"bootstrap.servers": "kafka:9092"}
+
+consumer_group = ConsumerGroup(admin_client_config, timeout=5)
 
 print("List all Consumer Groups")
 print(json.dumps(consumer_group.list(), indent=4), "\n\n")

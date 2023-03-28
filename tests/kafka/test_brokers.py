@@ -26,9 +26,10 @@ def test_broker_describe(admin_client, kafka_broker, kafka_consumer_group):
             call.list_consumer_groups().result(),
             call.list_consumer_groups().result().valid.__iter__(),
             call.list_topics().brokers.values(),
-            call.list_topics().brokers.values().__len__()
+            call.list_topics().brokers.values().__len__(),
         ]
     )
+
 
 def test_broker_describe_configs(admin_client, kafka_broker):
     _ = kafka_broker.describe_configs(broker_id="1")
@@ -41,6 +42,7 @@ def test_broker_describe_configs(admin_client, kafka_broker):
     #         call.describe_configs.__bool__()
     #     ]
     # )
+
 
 def test_broker_describe_config_with_controller(admin_client, kafka_broker):
     # mock_controller_id = "2"
@@ -59,6 +61,7 @@ def test_broker_describe_config_with_controller(admin_client, kafka_broker):
     #     ]
     # )
 
+
 def test_broker_alter(admin_client, kafka_broker):
     config = {"auto.create.topics.enable": "false"}
     topics = _ = kafka_broker.alter(config)
@@ -67,9 +70,10 @@ def test_broker_alter(admin_client, kafka_broker):
         [
             call.list_topics(timeout=10),
             call.list_topics().brokers.items(),
-            call.list_topics().brokers.items().__iter__()
+            call.list_topics().brokers.items().__iter__(),
         ]
     )
+
 
 def test_broker_alter_with_broker_ids(admin_client, kafka_broker):
     broker_id = "1"

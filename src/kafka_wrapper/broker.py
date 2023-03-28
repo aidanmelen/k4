@@ -16,6 +16,9 @@ class Broker(KafkaResource):
             admin_client_config=admin_client_config, timeout=timeout, log_level=log_level
         )
 
+    def __str__(self):
+        return "Broker"
+
     def list(self):
         """
         List Kafka Brokers.
@@ -87,7 +90,6 @@ class Broker(KafkaResource):
         else:
             resource = ConfigResource(ResourceType.BROKER, str(metadata.controller_id))
 
-
         # Only one ConfigResource of type BROKER is allowed per call
         future = self._admin_client.describe_configs([resource], request_timeout=self._timeout)
 
@@ -118,11 +120,16 @@ class Broker(KafkaResource):
         metadata = self._admin_client.list_topics(timeout=self._timeout)
 
         if broker_ids:
-            resources = [ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id in broker_ids]
+            resources = [
+                ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id in broker_ids
+            ]
         else:
             # get all kafka broker ids
-            resources = [ConfigResource(ResourceType.BROKER, str(broker_id)) for broker_id, md in metadata.brokers.items()]
-            
+            resources = [
+                ConfigResource(ResourceType.BROKER, str(broker_id))
+                for broker_id, md in metadata.brokers.items()
+            ]
+
         for resource in resources:
             for k, v in config.items():
                 resource.set_config(k, v, overwrite=overwrite)

@@ -10,9 +10,11 @@ import pytest
 def admin_client():
     return MagicMock()
 
+
 @pytest.fixture
 def consumer():
     return MagicMock()
+
 
 @pytest.fixture
 def kafka_broker(admin_client):
@@ -20,11 +22,13 @@ def kafka_broker(admin_client):
     b.admin_client = admin_client
     return b
 
+
 @pytest.fixture
 def kafka_topic(admin_client):
     t = Topic({"bootstrap.servers": "mock:9092"})
     t.admin_client = admin_client
     return t
+
 
 @pytest.fixture
 def kafka_consumer_group(admin_client):

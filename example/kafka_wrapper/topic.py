@@ -3,7 +3,9 @@ from k4.helpers import open_editor
 import json
 
 
-topic = Topic({"bootstrap.servers": "kafka:9092"}, timeout=3)
+admin_client_config = {"bootstrap.servers": "kafka:9092"}
+
+topic = Topic(admin_client_config, timeout=3)
 
 print("List all Topics")
 print(json.dumps(topic.list(), indent=4), "\n\n")

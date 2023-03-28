@@ -17,6 +17,9 @@ class ConsumerGroup(KafkaResource):
             admin_client_config=admin_client_config, timeout=timeout, log_level=log_level
         )
 
+    def __str__(self):
+        return "ConsumerGroup"
+
     def has_any_topic_assignments(self, group_id, topic_names):
         """
         Checks whether the Consumer Group is assigned to any specified topic names.
@@ -30,7 +33,7 @@ class ConsumerGroup(KafkaResource):
                 if a.get("topic") in topic_names:
                     result = True
                     break
-        
+
         return result
 
     def list(self, only_stable=False, only_high_level=False, topics=[]):

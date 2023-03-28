@@ -73,30 +73,28 @@ def test_consumer_group_list(admin_client, kafka_consumer_group):
         ]
     )
 
+
 def test_consumer_group_does_exist(admin_client, kafka_consumer_group):
-    with patch(
-        "kafka_wrapper.consumer_group.ConsumerGroup.list"
-    ) as mock_kafka_consumer_group_list:
-    
+    with patch("kafka_wrapper.consumer_group.ConsumerGroup.list") as mock_kafka_consumer_group_list:
+
         mock_kafka_consumer_group_list.return_value = [
-            {'id': 'group1'},
-            {'id': 'group2'},
-            {'id': 'group3'}
+            {"id": "group1"},
+            {"id": "group2"},
+            {"id": "group3"},
         ]
-        result = kafka_consumer_group.does_exist('group2')
+        result = kafka_consumer_group.does_exist("group2")
         assert result
 
+
 def test_consumer_group_does_not_exist(admin_client, kafka_consumer_group):
-    with patch(
-        "kafka_wrapper.consumer_group.ConsumerGroup.list"
-    ) as mock_kafka_consumer_group_list:
-    
+    with patch("kafka_wrapper.consumer_group.ConsumerGroup.list") as mock_kafka_consumer_group_list:
+
         mock_kafka_consumer_group_list.return_value = [
-            {'id': 'group1'},
-            {'id': 'group2'},
-            {'id': 'group3'}
+            {"id": "group1"},
+            {"id": "group2"},
+            {"id": "group3"},
         ]
-        result = kafka_consumer_group.does_exist('this.group.does.not.exist')
+        result = kafka_consumer_group.does_exist("this.group.does.not.exist")
         assert not result
 
 
@@ -161,6 +159,7 @@ def test_consumer_group_describe(admin_client, kafka_consumer_group):
             call.describe_consumer_groups().items().__iter__(),
         ]
     )
+
 
 def test_consumer_group_describe_wtihout_including_offset_lag(admin_client, kafka_consumer_group):
     group_ids = ["group1", "group2"]

@@ -3,7 +3,9 @@ from k4.helpers import open_editor
 import json
 
 
-broker = Broker({"bootstrap.servers": "kafka:9092"}, timeout=3)
+admin_client_config = {"bootstrap.servers": "kafka:9092"}
+
+broker = Broker(admin_client_config, timeout=3)
 
 print("List all Brokers")
 print(json.dumps(broker.list(), indent=4), "\n\n")

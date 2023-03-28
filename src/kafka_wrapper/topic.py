@@ -15,6 +15,9 @@ class Topic(KafkaResource):
             admin_client_config=admin_client_config, timeout=timeout, log_level=log_level
         )
 
+    def __str__(self):
+        return "Topic"
+
     def list(self, show_internal=True):
         topics_metadata = self._admin_client.list_topics(timeout=self._timeout)
 
