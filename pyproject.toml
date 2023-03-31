@@ -7,7 +7,7 @@ readme = "README.md"
 homepage = "https://github.com/aidanmelen/kafkactl-py"
 repository = "https://github.com/aidanmelen/kafkactl-py"
 license = "MIT"
-packages = [{include = "cli", from = "src"}, {include = "kafka_wrapper", from = "src"}]
+packages = [{include = "cli", from = "src"}, {include = "curses_wrapper", from = "src"}, {include = "kafka_wrapper", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

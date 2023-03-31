@@ -1,5 +1,5 @@
 from kafka_wrapper.broker import Broker
-from k4.helpers import open_editor
+from k4.editor import open_editor
 import json
 
 

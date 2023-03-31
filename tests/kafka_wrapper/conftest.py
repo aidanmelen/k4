@@ -6,6 +6,7 @@ from kafka_wrapper.consumer_group import ConsumerGroup
 import pytest
 
 
+
 @pytest.fixture
 def admin_client():
     return MagicMock()
