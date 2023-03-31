@@ -31,10 +31,10 @@ def main(screen):
         screen.addstr("\n\n")
 
     # Display specific color pairs
-    screen.addstr("RED_ON_BLACK", curses_color_pair["RED_ON_BLACK"])
-    screen.addstr("GREEN_ON_BLACK", curses_color_pair["GREEN_ON_BLACK"])
-    screen.addstr("BLUE_ON_BLACK", curses_color_pair["BLUE_ON_BLACK"])
-    screen.addstr("\n\n")
+    # screen.addstr("RED_ON_BLACK", curses_color_pair["RED_ON_BLACK"])
+    # screen.addstr("GREEN_ON_BLACK", curses_color_pair["GREEN_ON_BLACK"])
+    # screen.addstr("BLUE_ON_BLACK", curses_color_pair["BLUE_ON_BLACK"])
+    # screen.addstr("\n\n")
 
     # Display custom color pairs by number
     # curses_color_pair.init_pair("BLACK")
