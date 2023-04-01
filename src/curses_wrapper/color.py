@@ -83,12 +83,10 @@ class CursesColor:
         curses.start_color()
 
         if not curses.can_change_color():
-            err_msg = "Error: Cannot change colors displayed by the terminal."
-            raise ValueError(err_msg)
+            raise Exception("Cannot change colors displayed by the terminal.")
 
         if os.environ.get("TERM") != "xterm-256color":
-            err_msg = "Error: No extended color support found. This allows more than 256 color pairs for terminals that support more than 16 colors (e.g. xterm-256color)"
-            raise ValueError(err_msg)
+            raise Exception("No extended color support found.")
 
         curses.use_default_colors()
         self.__has_colors = True
@@ -116,17 +114,17 @@ class CursesColor:
         """Returns the RGB values of the color with the given number."""
         return curses.color_content(color_number)
 
+    def is_color_initialized(self, color_number: int) -> bool:
+        """Returns True if the color with the given number has been initialized."""
+        return color_number in self._color_name_to_number.values()
+
     def next_color_number(self) -> int:
         """Returns the next available color number from highest to lowest."""
         for color_number in range(curses.COLORS-1, -1, -1):
             if color_number not in self._used_color_numbers:
                 return color_number
         else:
-            raise ValueError("Color is greater than 255 (curses.COLORS - 1).")
-
-    def is_color_initialized(self, color_number: int) -> bool:
-        """Returns True if the color with the given number has been initialized."""
-        return color_number in self._color_name_to_number.values()
+            raise Exception(f"All {curses.COLORS} colors are set.")
 
     def __setitem__(self, color_name: str, rgb: Tuple[int, int, int]) -> None:
         """Sets a color by name and its corresponding RGB values."""
@@ -134,22 +132,24 @@ class CursesColor:
         
         if color_name in self._color_name_to_number:
             # update existing color
+            color_number = self[color_name]
             self._color_name_to_rgb[color_name] = rgb
+            curses.init_color(color_number, *rgb)
+
         else:
             # create new color
             color_number = self.next_color_number()
             self._color_name_to_number[color_name] = color_number
             self._used_color_numbers.add(color_number)
-
-        curses.init_color(color_number, *rgb)
+            curses.init_color(color_number, *rgb)
 
     def __getitem__(self, color_name: str) -> int:
         """Returns the color number of a given color name."""
         return self._color_name_to_number[color_name]
 
-    def get(self, color_name: str, default: int = COLOR_DEFAULT) -> int:
+    def get(self, color_name: str, default_color_number: int = COLOR_DEFAULT) -> int:
         """Returns the color number of a given color name, or a default value if the color name does not exist."""
-        return self._color_name_to_number.get(color_name, default)
+        return self._color_name_to_number.get(color_name, default_color_number)
 
     def __iter__(self) -> Iterator[Tuple[str, int]]:
         """Returns an iterator over the color name to color number mapping."""

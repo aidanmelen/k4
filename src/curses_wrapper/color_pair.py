@@ -23,6 +23,9 @@ class CursesColorPair:
         Args:
             curses_color (Type[CursesColor]): A CursesColor object representing the color palette.
         """
+        if not isinstance(curses_color, CursesColor):
+            raise TypeError("curses_color must be a CursesColor type.")
+
         self._curses_color = curses_color
         self._pair_name_to_number = {}
         self._used_pair_numbers = set()
@@ -38,18 +41,15 @@ class CursesColorPair:
         for fg_color_name, fg_color_number in self._curses_color:
             self.init_pair(fg_color_name, bg_color_name)
 
-    def init_pair(self, fg_color_name: str = None, bg_color_name: str = None) -> None:
+    def init_pair(self, fg_color_name: str, bg_color_name: str = None) -> None:
         """Initializes a color pair with the specified foreground and background colors."""
         pair_name = f"{fg_color_name}_ON_{bg_color_name}".upper()
 
         fg_color_number = self._curses_color.get(fg_color_name)
         bg_color_number = self._curses_color.get(bg_color_name)
 
-        if not fg_color_number:
-            raise ValueError(f"The foreground color name {fg_color_name} has not been initialized.")
-        
         if not bg_color_number:
-            raise ValueError(f"The background color name {bg_color_name} has not been initialized.")
+            raise Exception(f"The background color name {bg_color_name} has not been initialized.")
 
         self[pair_name] = (fg_color_name, bg_color_name)        
 
@@ -59,7 +59,7 @@ class CursesColorPair:
             if pair_number not in self._used_pair_numbers:
                 return pair_number
         else:
-            raise ValueError("Error: Color pair is greater than 32765 (curses.COLOR_PAIRS - 1).")
+            raise Exception("Color pair is greater than 32765 (curses.COLOR_PAIRS - 1).")
 
     @property
     def pair_name_to_number(self) -> Dict[str, int]:
@@ -71,7 +71,8 @@ class CursesColorPair:
         if len(color_pair_names) != 2:
             raise ValueError("color_pair_names must be a 2-tuple of color names.")
 
-        fg_color_name, bg_color_name = map(str.upper, color_pair_names)
+        fg_color_name = str(color_pair_names[0]).upper()
+        bg_color_name = str(color_pair_names[1]).upper()
         pair_number = self.next_pair_number()
         curses.init_pair(
             pair_number, self._curses_color.get(fg_color_name), self._curses_color.get(bg_color_name)

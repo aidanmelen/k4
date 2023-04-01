@@ -5,63 +5,138 @@ import curses
 import os
 
 
-# def test_start_color():
-#     cc = CursesColor()
+def test_start_color(mock_curses):
+    curses.COLORS = 256
+    cc = CursesColor()
+    cc.start_color()
+    assert curses.can_change_color.called
+    assert curses.use_default_colors.called
 
-#     with pytest.raises(ValueError, match="Cannot change colors displayed by the terminal"):
-#         cc.start_color()
 
-#     os.environ["TERM"] = "xterm-256color"
+def test_start_color_when_cannot_change_color(mock_curses):
+    curses.COLORS = 256
+    cc = CursesColor()
 
-#     with pytest.raises(ValueError, match="No extended color support found"):
-#         cc.start_color()
-    
+    os.environ["TERM"] = "xterm-256color"
+    curses.can_change_color.return_value = False
+
+    with pytest.raises(Exception, match="Cannot change colors displayed by the terminal."):
+        cc.start_color()
+
+
+def test_start_color_without_extended_colors(mock_curses):
+    curses.COLORS = 256
+    cc = CursesColor()
+
+    os.environ["TERM"] = "unknown"
+    curses.can_change_color.return_value = True
+
+    with pytest.raises(Exception, match="No extended color support found."):
+        cc.start_color()
+
+    os.environ["TERM"] = "xterm-256color"
+
+
 def test_init_colors(curses_color):
-    for color_name, color_rgb in curses_color._color_name_to_rgb.items():
-        assert curses_color[color_name] == color_rgb
-
-# def test_color_conversion(curses_color):
-#     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
-#     assert curses_color.color_pair("WHITE", "BLACK") == 1
-
-#     with pytest.raises(KeyError, match="Color name 'INVALID' not found"):
-#         curses_color.color_pair("WHITE", "INVALID")
-
-#     with pytest.raises(KeyError, match="Color name 'INVALID' not found"):
-#         curses_color.color_pair("INVALID", "BLACK")
+    assert curses_color._color_name_to_rgb.keys() == curses_color.color_name_to_number.keys()
 
 
-# def test_color_number_allocation(curses_color):
-#     for color_name in curses_color._color_name_to_rgb.keys():
-#         assert isinstance(curses_color[color_name], int)
-#         assert curses_color[color_name] not in curses_color._used_color_numbers
+def test_has_colors(mock_curses):
+    curses.COLORS = 256
+    cc = CursesColor()
+    assert not cc.has_colors
 
-#     with pytest.raises(ValueError, match="No more color pairs available"):
-#         for _ in range(16):
-#             curses_color.allocate_color_pair()
-
-#     assert curses_color.allocate_color_pair() in curses_color._used_color_numbers
+    cc.start_color()
+    cc.init_colors()
+    assert cc.has_colors
 
 
-# def test_color_pair_setting_and_deallocation(curses_color):
-#     curses_color.allocate_color_pair()
-#     curses_color.set_color_pair("MY_COLOR", "WHITE", "BLACK")
-#     assert curses_color["MY_COLOR"] == curses_color.color_pair("WHITE", "BLACK")
-#     assert curses_color.color_pair("MY_COLOR", fallback=None) is None
-
-#     with pytest.raises(KeyError, match="Color name 'INVALID' not found"):
-#         curses_color.set_color_pair("MY_COLOR", "WHITE", "INVALID")
-
-#     with pytest.raises(KeyError, match="Color name 'INVALID' not found"):
-#         curses_color.set_color_pair("MY_COLOR", "INVALID", "BLACK")
-
-#     with pytest.raises(KeyError, match="Color name 'MY_COLOR' not found"):
-#         curses_color.deallocate_color_pair("MY_COLOR")
-
-#     assert curses_color.deallocate_color_pair("WHITE", "BLACK") in curses_color._used_color_numbers
+def test_color_content_by_name(curses_color):
+    curses_color.color_content_by_name("WHITE")
+    assert curses.color_content.called
 
 
-# def test_color_pair_caching(curses_color):
-#     assert curses_color.color_pair("WHITE", "BLACK") == curses_color.color_pair("WHITE", "BLACK")
-#     curses_color.allocate_color_pair()
-#     assert curses_color.color_pair("WHITE", "BLACK") != curses_color.color_pair("WHITE", "BLACK")
+def test_color_name_to_number(curses_color):
+    curses_color.color_content_by_number("WHITE")
+    assert curses.color_content.called
+
+
+def test_is_color_initialized(curses_color):
+    # assign color number from COLOR-1 (256) to 0
+    assert curses_color.is_color_initialized(255)
+    assert curses_color.is_color_initialized(250)
+    assert curses_color.is_color_initialized(245)
+
+    # color 50 should not be set because we only have like 50 pre-defined colors
+    assert not curses_color.is_color_initialized(50)
+    assert not curses_color.is_color_initialized(45)
+    assert not curses_color.is_color_initialized(40)
+
+
+def test_next_color_number(curses_color):
+    expected_next_color_number = min(curses_color.color_name_to_number.values()) - 1
+    actual_next_color_number = curses_color.next_color_number()
+    assert actual_next_color_number == expected_next_color_number
+
+
+def test__setitem__(curses_color):
+    next_color_number = curses_color.next_color_number()
+    assert next_color_number not in curses_color._used_color_numbers
+    curses_color["CUSTOM"] = (1,2,3)
+    assert curses_color.color_name_to_number["CUSTOM"] == next_color_number
+    assert next_color_number in curses_color._used_color_numbers
+    assert curses.init_color.called
+
+
+def test__setitem__with_existing_color(curses_color):
+    previous_used_color_numbers_count = len(curses_color._used_color_numbers)
+    previous_color_content = curses_color._color_name_to_rgb["WHITE"]
+    curses_color["WHITE"] = (1,2,3)
+
+    # no new color was added
+    assert previous_used_color_numbers_count == len(curses_color._used_color_numbers)
+
+    # but the WHITE RBG 3-tuple was updated
+    assert curses_color._color_name_to_rgb["WHITE"] != previous_color_content
+    assert curses.init_color.called
+
+
+def test__setitem__when_max_colors(curses_color):
+    # artificially fill colors
+    for color_number in range(curses.COLORS-1, -1, -1):
+        curses_color._used_color_numbers.add(color_number)
+
+    with pytest.raises(Exception, match=f"All {curses.COLORS} colors are set."):
+        curses_color["MAX_COLOR"] = (1,2,3)
+
+
+def test__getitem__(curses_color):
+    assert curses_color["RED"] == curses_color.color_name_to_number["RED"]
+    assert curses_color["GREEN"] == curses_color.color_name_to_number["GREEN"]
+    assert curses_color["BLUE"] == curses_color.color_name_to_number["BLUE"]
+
+
+def test_get(curses_color):
+    curses_color.start_color()
+    curses_color.init_colors()
+    assert curses_color["RED"] == curses_color.get("RED")
+    assert curses_color.COLOR_DEFAULT == curses_color.get("FAKE")
+    assert 10 == curses_color.get("FAKE", 10)
+
+
+def test__iter__(curses_color):
+    curses_color.start_color()
+    curses_color.init_colors()
+    color_name_to_number_iter = iter(curses_color)
+    assert ("WHITE", 255) == next(color_name_to_number_iter)
+    assert ("BLACK", 254) == next(color_name_to_number_iter)
+    assert ("RED", 253) == next(color_name_to_number_iter)
+
+
+def test_items(curses_color):
+    curses_color.start_color()
+    curses_color.init_colors()
+    color_name_to_number_items = dict(curses_color.items())
+    assert color_name_to_number_items["RED"] == 253
+    assert color_name_to_number_items["GREEN"] == 252
+    assert color_name_to_number_items["BLUE"] == 251
