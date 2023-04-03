@@ -14,7 +14,7 @@ class CursesWindow:
     """
     PADDING = 1
 
-    def __init__(self, height: int, width: int, y: int, x: int, box: bool = False) -> None:
+    def __init__(self, height: int, width: int, y: int, x: int, should_box: bool = False) -> None:
         """
         Initialize a CursesWindow object.
 
@@ -31,12 +31,12 @@ class CursesWindow:
         self._x = x
         self._max_h = curses.LINES
         self._max_w = curses.COLS
-        self.box = box
+        self.should_box = should_box
 
         self._window = curses.newwin(height, width, y, x)
         self._window.box()
 
-        self._last_refresh_time = time.perf_counter()
+        self._refresh_time = time.perf_counter()
         self._refresh_elapsed_time = 0.0
 
 
@@ -56,27 +56,38 @@ class CursesWindow:
         return (self._y, self._x)
 
     @property
-    def last_refresh_time(self) -> float:
-        """Returns the time (in seconds) since the window was last refreshed."""
-        return self._last_refresh_time
+    def center_position(self) -> Tuple[int, int]:
+        return (self._h//2, self._w//2)
 
-    def update_current_refresh_time(self) -> None:
-        """Update the current refresh time and the elapsed time since the last refresh."""
+    @property
+    def refresh_time(self) -> float:
+        """Returns the time (in seconds) since the window was last refreshed."""
+        return self._refresh_time
+    
+    @property
+    def refresh_elapsed_time(self) -> float:
+        return self._refresh_elapsed_time
+
+    def _update_refresh_time(self) -> None:
+        """Update the refresh time and the elapsed time since the last refresh."""
         current_time = time.perf_counter()
-        self._refresh_elapsed_time = current_time - self._last_refresh_time
-        self._last_refresh_time = current_time
+        self._refresh_elapsed_time = round(current_time - self._refresh_time, 9)
+        self._refresh_time = current_time
 
     def update_max_size(self) -> None:
         """Update the maximum size (height, width) of the screen."""
         self._max_h, self._max_w = self._window.getmaxyx()
 
-    def addstr(self, *args):
+    def addstr(self, *args, raise_on_curses_error=True):
         try:
             self.window.addstr(*args)
         except curses.error as e:
-            # Writing outside the window, subwindow, or pad raises curses.error. 
-            # Attempting to write to the lower right corner of a window, subwindow, or pad will cause an exception to be raised after the string is printed.
-            pass
+            # Writing outside the window, subwindow, or pad raises curses.error.
+            if raise_on_curses_error:
+                raise e
+            else:
+                # It may be desirable to ignore the error rather than crash.
+                pass
     
     def refresh(self, defer=False) -> None:
         """Refresh the window and update the current refresh time.
@@ -88,9 +99,9 @@ class CursesWindow:
 
         if not defer:
             curses.doupdate()
-            self.update_current_refresh_time()
+            self._update_refresh_time()
 
-            if self.box:
+            if self.should_box:
                 self._window.box()
 
     def resize(self, height: int, width: int, defer_refresh=False) -> None:
