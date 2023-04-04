@@ -5,6 +5,7 @@ import curses
 import pytest
 import time
 
+
 @pytest.fixture
 def mock_curses():
     curses.COLORS = 256
@@ -12,6 +13,7 @@ def mock_curses():
     curses.LINES = 100
     curses.COLS = 100
 
+    # fmt: off
     with patch("curses.initscr"), \
          patch("curses.start_color"), \
          patch("curses.can_change_color"), \
@@ -23,15 +25,18 @@ def mock_curses():
          patch("curses.newwin"):
         yield
 
+
 @pytest.fixture
 def mock_time_perf_counter():
     with patch("time.perf_counter") as mock_time_perf_counter:
         mock_time_perf_counter.return_value = 1.0
         yield mock_time_perf_counter
 
+
 @pytest.fixture
 def curses_window(mock_curses, mock_time_perf_counter):
     return CursesWindow(5, 10, 2, 2)
+
 
 @pytest.fixture
 def curses_color(mock_curses):
@@ -39,6 +44,7 @@ def curses_color(mock_curses):
     cc.start_color()
     cc.init_colors()
     return cc
+
 
 @pytest.fixture
 def curses_color_pair(curses_color):

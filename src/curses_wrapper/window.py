@@ -1,4 +1,5 @@
-from typing import Tuple
+from typing import Tuple, List
+import textwrap
 import curses
 import time
 
@@ -8,37 +9,29 @@ class CursesWindow:
 
     This class provides a higher-level interface to the curses window
     functionality.
-
-    Attributes:
-        PADDING (int): the size of padding.
     """
-    PADDING = 1
 
-    def __init__(self, height: int, width: int, y: int, x: int, should_box: bool = False) -> None:
+    def __init__(
+        self, lines: int, cols: int, y: int = 0, x: int = 0, has_box: bool = False
+    ) -> None:
         """
         Initialize a CursesWindow object.
 
         Args:
-        - height (int): the height of the window
-        - width (int): the width of the window
-        - y (int): the y-coordinate of the top left corner of the window
-        - x (int): the x-coordinate of the top left corner of the window
-        - box (bool, optional): whether or not to draw a box around the window. Default is False.
+        - lines (int): the lines of the window
+        - cols (int): the cols of the window
+        - y (int, optional): the y-coordinate of the top left corner of the window. Default is 0.
+        - x (int, optional): the x-coordinate of the top left corner of the window. Default is 0.
+        - has_box (bool, optional): whether or not to draw a box around the window. Default is False.
         """
-        self._h = height
-        self._w = width
+        self._lines = lines
+        self._cols = cols
         self._y = y
         self._x = x
-        self._max_h = curses.LINES
-        self._max_w = curses.COLS
-        self.should_box = should_box
-
-        self._window = curses.newwin(height, width, y, x)
-        self._window.box()
-
+        self.has_box = has_box
+        self._window = curses.newwin(lines, cols, y, x)
         self._refresh_time = time.perf_counter()
         self._refresh_elapsed_time = 0.0
-
 
     @property
     def window(self) -> curses.window:
@@ -46,9 +39,29 @@ class CursesWindow:
         return self._window
 
     @property
+    def lines(self) -> int:
+        """Returns the lines size of the window."""
+        return self._lines
+
+    @property
+    def cols(self) -> int:
+        """Returns the cols size of the window."""
+        return self._cols
+
+    @property
+    def y(self) -> int:
+        """Returns the y position of the window."""
+        return self._y
+
+    @property
+    def x(self) -> int:
+        """Returns the x position of the window."""
+        return self._x
+
+    @property
     def size(self) -> Tuple[int, int]:
-        """Returns the size (height, width) of the window."""
-        return (self._h, self._w)
+        """Returns the size (lines, cols) of the window."""
+        return (self._lines, self._cols)
 
     @property
     def position(self) -> Tuple[int, int]:
@@ -57,13 +70,13 @@ class CursesWindow:
 
     @property
     def center_position(self) -> Tuple[int, int]:
-        return (self._h//2, self._w//2)
+        return (self._lines // 2, self._cols // 2)
 
     @property
     def refresh_time(self) -> float:
         """Returns the time (in seconds) since the window was last refreshed."""
         return self._refresh_time
-    
+
     @property
     def refresh_elapsed_time(self) -> float:
         return self._refresh_elapsed_time
@@ -74,71 +87,135 @@ class CursesWindow:
         self._refresh_elapsed_time = round(current_time - self._refresh_time, 9)
         self._refresh_time = current_time
 
-    def update_max_size(self) -> None:
-        """Update the maximum size (height, width) of the screen."""
-        self._max_h, self._max_w = self._window.getmaxyx()
+    def getmaxyx(self) -> None:
+        """Return a tuple (y, x) of the height and width of the window."""
+        return self._window.getmaxyx()
 
-    def addstr(self, *args, raise_on_curses_error=True):
+    def addstr(self, *args, ignore_curses_error=False):
+        """Paint the character string str at (y, x) with attributes attr, overwriting anything previously on the display."""
         try:
             self.window.addstr(*args)
         except curses.error as e:
             # Writing outside the window, subwindow, or pad raises curses.error.
-            if raise_on_curses_error:
-                raise e
-            else:
-                # It may be desirable to ignore the error rather than crash.
+            if ignore_curses_error:
                 pass
-    
-    def refresh(self, defer=False) -> None:
-        """Refresh the window and update the current refresh time.
-        
-        Args:
-            defer (bool): If you have to update multiple windows, you can speed performance and perhaps reduce screen flicker by marking the window for refresh but deferring the window update.
-        """
+            else:
+                raise e
+
+    def addnstr(self, *args, ignore_curses_error=False):
+        """Paint at most n characters of the character string str at (y, x) with attributes attr, overwriting anything previously on the display."""
+        try:
+            self.window.addnstr(*args)
+        except curses.error as e:
+            # Writing outside the window, subwindow, or pad raises curses.error.
+            if ignore_curses_error:
+                pass
+            else:
+                raise e
+
+    def noutrefresh(self) -> None:
+        """Mark for refresh but wait."""
         self._window.noutrefresh()
 
-        if not defer:
-            curses.doupdate()
-            self._update_refresh_time()
+    def doupdate(self) -> None:
+        """Update the physical screen."""
+        self._window.doupdate()
+        self._update_refresh_time()
 
-            if self.should_box:
-                self._window.box()
+    def refresh(self) -> None:
+        """Refresh the window and update the current refresh time."""
+        self._window.refresh()
+        self._update_refresh_time()
 
-    def resize(self, height: int, width: int, defer_refresh=False) -> None:
-        """Resize the window to the specified height and width."""
-        self._h = height
-        self._w = width
+        if self.has_box:
+            self._window.box()
+
+    def resize(self, lines: int, cols: int, should_refresh=False, should_noutrefresh=False) -> None:
+        """Resize the window to the specified lines and cols."""
+        self._lines = lines
+        self._cols = cols
 
         self.clear()
-        self._window.resize(self._h, self._w)
-        self.refresh(defer=defer_refresh)
-    
-    def resize_max_height(self, defer_refresh=False) -> None:
-        """Resize the window to the maximum height of the screen."""
-        self.update_max_size()
-        self.resize(self._max_h, self._w, defer_refresh)
-    
-    def resize_max_width(self, defer_refresh=False) -> None:
-        """Resize the window to the maximum width of the screen."""
-        self.update_max_size()
-        self.resize(self._h, self._max_w, defer_refresh)
-    
-    def resize_max_size(self, defer_refresh=False) -> None:
-        """Resize the window to the maximum size of the screen."""
-        self.update_max_size()
-        self.resize(self._max_h, self._max_w, defer_refresh)
+        self._window.resize(self._lines, self._cols)
 
-    def move(self, y: int, x: int, defer_refresh=False) -> None:
-        """Move the window to the specified position."""
-        self._y = y
-        self._x = x
-        self._window.move(y, x)
-        self.refresh(defer=defer_refresh)
-    
+        if should_refresh:
+            self.refresh()
+
+        if should_noutrefresh:
+            self.noutrefresh()
+
+    def resize_max_lines(self, should_refresh=False, should_noutrefresh=False) -> None:
+        """Resize the window to the maximum lines of the entire terminal screen."""
+        curses.update_lines_cols()
+        self.resize(curses.LINES, self._cols, should_refresh, should_noutrefresh)
+
+    def resize_max_cols(self, should_refresh=False, should_noutrefresh=False) -> None:
+        """Resize the window to the maximum columes of the entire terminal screen."""
+        curses.update_lines_cols()
+        self.resize(self._lines, curses.COLS, should_refresh, should_noutrefresh)
+
+    def resize_max(self, should_refresh=False, should_noutrefresh=False) -> None:
+        """Resize the window to the maximum size of the entire terminal screen."""
+        curses.update_lines_cols()
+        self.resize(curses.LINES, curses.COLS, should_refresh, should_noutrefresh)
+
     def clear(self) -> None:
         """Clear the contents of the window."""
         self._window.clear()
+
+
+class CursesWindowText:
+    """A wrapper around the curses window functionality.
+
+    This class provides a higher-level interface to the curses window
+    functionality.
+
+    Attributes:
+        PADDING (int): the size of padding.
+    """
+
+    PADDING = 1
+
+    def __init__(self, window: CursesWindow) -> None:
+        """
+        Initialize a CursesWindowText object.
+
+        Arguments:
+            window (CursesWindow): The CursesWindow object.
+        """
+        self.__window = window
     
-    def erase(self) -> None:
-        """Erase the contents of the window."""
-        self._window.erase()
+    def align_left(self, text: str, width: int = None) -> str:
+        """Align left and pad the given text given width."""
+        if not width:
+            width = self.__window.cols
+        return "{:<{}}".format(text, width)
+    
+    def align_right(self, text: str, width: int = None) -> str:
+        """Align right and pad the given text given width."""
+        if not width:
+            width = self.__window.cols
+        return "{:>{}}".format(text, width)
+    
+    def align_center(self, text: str, width: int = None) -> str:
+        """Align center and pad the given text given width."""
+        if not width:
+            width = self.__window.cols
+        return "{:^{}}".format(text, width)
+
+    def shorten(self, text: str, width: int = None, placeholder: str = '', **kwargs) -> str:
+        """Collapse and truncate the given text to fit in the given width."""
+        if not width:
+            width = self.__window.cols
+        return textwrap.shorten(text, width, placeholder=placeholder, **kwargs)
+
+    def wrap(self, text: str, width: int = None, **kwargs) -> List[str]:
+        """Wraps the single paragraph in text (a string) so every line is at most width characters long. Returns a list of output lines, without final newlines."""
+        if not width:
+            width = self.__window.cols
+        return textwrap.wrap(text, width, **kwargs)
+    
+    def fill(self, text: str, width: int = None, **kwargs) -> str:
+        if not width:
+            width = self.__window.cols
+        return textwrap.fill(text, width, **kwargs)

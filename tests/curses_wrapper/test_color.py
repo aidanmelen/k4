@@ -82,7 +82,7 @@ def test_curses_color_next_color_number(curses_color):
 def test_curses_color__setitem__(curses_color):
     next_color_number = curses_color.next_color_number()
     assert next_color_number not in curses_color._used_color_numbers
-    curses_color["CUSTOM"] = (1,2,3)
+    curses_color["CUSTOM"] = (1, 2, 3)
     assert curses_color.color_name_to_number["CUSTOM"] == next_color_number
     assert next_color_number in curses_color._used_color_numbers
     assert curses.init_color.called
@@ -91,7 +91,7 @@ def test_curses_color__setitem__(curses_color):
 def test_curses_color__setitem__with_existing_color(curses_color):
     previous_used_color_numbers_count = len(curses_color._used_color_numbers)
     previous_color_content = curses_color._color_name_to_rgb["WHITE"]
-    curses_color["WHITE"] = (1,2,3)
+    curses_color["WHITE"] = (1, 2, 3)
 
     # no new color was added
     assert previous_used_color_numbers_count == len(curses_color._used_color_numbers)
@@ -103,11 +103,11 @@ def test_curses_color__setitem__with_existing_color(curses_color):
 
 def test_curses_color__setitem__when_max_colors(curses_color):
     # artificially fill colors
-    for color_number in range(curses.COLORS-1, -1, -1):
+    for color_number in range(curses.COLORS - 1, -1, -1):
         curses_color._used_color_numbers.add(color_number)
 
     with pytest.raises(Exception, match=f"All {curses.COLORS} colors are set."):
-        curses_color["MAX_COLOR"] = (1,2,3)
+        curses_color["MAX_COLOR"] = (1, 2, 3)
 
 
 def test_curses_color__getitem__(curses_color):

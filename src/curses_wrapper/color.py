@@ -94,7 +94,7 @@ class CursesColor:
         """Initializes the extended colors."""
         for color_name, color_rgb in self._color_name_to_rgb.items():
             self[color_name] = color_rgb
-    
+
     @property
     def has_colors(self) -> bool:
         """Returns True if the terminal supports colors."""
@@ -119,7 +119,7 @@ class CursesColor:
 
     def next_color_number(self) -> int:
         """Returns the next available color number from highest to lowest."""
-        for color_number in range(curses.COLORS-1, -1, -1):
+        for color_number in range(curses.COLORS - 1, -1, -1):
             if color_number not in self._used_color_numbers:
                 return color_number
         else:
@@ -128,7 +128,7 @@ class CursesColor:
     def __setitem__(self, color_name: str, rgb: Tuple[int, int, int]) -> None:
         """Sets a color by name and its corresponding RGB values."""
         color_name = str(color_name).upper()
-        
+
         if color_name in self._color_name_to_number:
             # update existing color
             color_number = self[color_name]
@@ -157,3 +157,101 @@ class CursesColor:
     def items(self) -> ItemsView[str, int]:
         """Returns a view object containing the color name to color number mapping."""
         return self._color_name_to_number.items()
+
+
+class CursesColorPair:
+    """A wrapper around the curses color pair functionality.
+
+    This class provides a higher-level interface to the curses color
+    pair functionality, allowing the user to work with color pair names
+    and low-level color pair numbers.
+
+    Attributes:
+        COLOR_PAIR_DEFAULT (int): The default color pair number.
+    """
+
+    COLOR_PAIR_DEFAULT: int = 0
+
+    def __init__(self, curses_color: Type[CursesColor]) -> None:
+        """
+        Initializes a new CursesColorPair object.
+
+        Args:
+            curses_color (Type[CursesColor]): A CursesColor object representing the color palette.
+        """
+        if not isinstance(curses_color, CursesColor):
+            raise TypeError("curses_color must be a CursesColor type.")
+
+        self._curses_color = curses_color
+        self._pair_name_to_number = {}
+        self._used_pair_numbers = set()
+
+    def init_pairs(self, bg_color_name: str = None) -> None:
+        """Initializes color pairs for all possible foreground/background color permutations."""
+        if not self._curses_color.has_colors:
+            raise RuntimeError(
+                "must call CursesColor().init_colors() before initializing the extended color pairs."
+            )
+
+        bg_color_name = str(bg_color_name).upper()
+        bg_color_number = self._curses_color.get(bg_color_name)
+
+        for fg_color_name, fg_color_number in self._curses_color:
+            self.init_pair(fg_color_name, bg_color_name)
+
+    def init_pair(self, fg_color_name: str, bg_color_name: str = None) -> None:
+        """Initializes a color pair with the specified foreground and background colors."""
+        pair_name = f"{fg_color_name}_ON_{bg_color_name}".upper()
+
+        fg_color_number = self._curses_color.get(fg_color_name)
+        bg_color_number = self._curses_color.get(bg_color_name)
+
+        if not bg_color_number:
+            raise Exception(f"The background color name {bg_color_name} has not been initialized.")
+
+        self[pair_name] = (fg_color_name, bg_color_name)
+
+    def next_pair_number(self) -> int:
+        """Returns the next available color pair number from lowest to highest."""
+        for pair_number in range(1, curses.COLOR_PAIRS - 1):
+            if pair_number not in self._used_pair_numbers:
+                return pair_number
+        else:
+            raise Exception("Color pair is greater than 32765 (curses.COLOR_PAIRS - 1).")
+
+    @property
+    def pair_name_to_number(self) -> Dict[str, int]:
+        """Returns a dictionary mapping pair names to pair numbers."""
+        return self._pair_name_to_number
+
+    def __setitem__(self, pair_name: str, color_pair_names) -> None:
+        """Sets a color pair with the specified name and color pair."""
+        if len(color_pair_names) != 2:
+            raise ValueError("color_pair_names must be a 2-tuple of color names.")
+
+        fg_color_name = str(color_pair_names[0]).upper()
+        bg_color_name = str(color_pair_names[1]).upper()
+        pair_number = self.next_pair_number()
+        curses.init_pair(
+            pair_number,
+            self._curses_color.get(fg_color_name),
+            self._curses_color.get(bg_color_name),
+        )
+        self._pair_name_to_number[pair_name] = curses.color_pair(pair_number)
+        self._used_pair_numbers.add(pair_number)
+
+    def __getitem__(self, name: str) -> int:
+        """Get the color pair number associated with the specified color pair name."""
+        return self._pair_name_to_number[name]
+
+    def get(self, pair_name: str, default: int = COLOR_PAIR_DEFAULT) -> int:
+        """Get the color pair number associated with the specified color pair name, or the default value if not found."""
+        return self._pair_name_to_number.get(pair_name, default)
+
+    def __iter__(self) -> Iterator[Tuple[str, int]]:
+        """Get an iterator over the color pairs."""
+        return iter(self._pair_name_to_number.items())
+
+    def items(self) -> ItemsView[str, int]:
+        """Get an iterator over the color pairs."""
+        return self._pair_name_to_number.items()

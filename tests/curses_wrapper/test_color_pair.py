@@ -43,12 +43,18 @@ def test_curses_color_pair__setitem__(curses_color_pair):
 
 def test_curses_color_pair__getitem__(curses_color_pair):
     curses_color_pair["CYAN_ON_BLACK"] = ("CYAN", "BLACK")
-    assert curses_color_pair["CYAN_ON_BLACK"] == curses_color_pair._pair_name_to_number["CYAN_ON_BLACK"]
+    assert (
+        curses_color_pair["CYAN_ON_BLACK"]
+        == curses_color_pair._pair_name_to_number["CYAN_ON_BLACK"]
+    )
 
 
 def test_curses_color_pair_get(curses_color_pair):
     curses_color_pair["CYAN_ON_BLACK"] = ("CYAN", "BLACK")
-    assert curses_color_pair.get("CYAN_ON_BLACK") == curses_color_pair._pair_name_to_number["CYAN_ON_BLACK"]
+    assert (
+        curses_color_pair.get("CYAN_ON_BLACK")
+        == curses_color_pair._pair_name_to_number["CYAN_ON_BLACK"]
+    )
 
 
 def test_curses_color_pair__iter__(curses_color_pair):

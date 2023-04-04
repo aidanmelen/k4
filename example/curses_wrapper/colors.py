@@ -1,5 +1,4 @@
-from curses_wrapper.color import CursesColor
-from curses_wrapper.color_pair import CursesColorPair
+from curses_wrapper.color import CursesColor, CursesColorPair
 import curses
 
 def main(screen):
