@@ -22,9 +22,9 @@ def test_align_center(curses_window_text):
 
 def test_shorten(curses_window_text):
     text = "This is a long sentence that needs to be shortened."
-    assert curses_window_text.shorten(text, 5) == "This"
-    assert curses_window_text.shorten(text, 20, placeholder='...') == "This is a long..."
-    assert curses_window_text.shorten(text) == "This is a"
+    assert curses_window_text.shorten(text, 20) == "This is a long [...]"
+    assert curses_window_text.shorten(text, 20, placeholder='') == "This is a long"
+    assert curses_window_text.shorten(text) == "This [...]"
 
 def test_wrap(curses_window_text):
     text = "This is a long sentence that needs to be wrapped."

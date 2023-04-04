@@ -32,6 +32,7 @@ class CursesWindow:
         self._window = curses.newwin(lines, cols, y, x)
         self._refresh_time = time.perf_counter()
         self._refresh_elapsed_time = 0.0
+        self._addstr_ignore_curses_error = False
 
     @property
     def window(self) -> curses.window:
@@ -91,13 +92,22 @@ class CursesWindow:
         """Return a tuple (y, x) of the height and width of the window."""
         return self._window.getmaxyx()
 
+    @property
+    def addstr_ignore_curses_error(self):
+        return self._addstr_ignore_curses_error
+    
+    @addstr_ignore_curses_error.setter
+    def addstr_ignore_curses_error(self, value):
+        bool_value = value == True
+        self._addstr_ignore_curses_error = bool_value
+
     def addstr(self, *args, ignore_curses_error=False):
         """Paint the character string str at (y, x) with attributes attr, overwriting anything previously on the display."""
         try:
             self.window.addstr(*args)
         except curses.error as e:
             # Writing outside the window, subwindow, or pad raises curses.error.
-            if ignore_curses_error:
+            if any([self.addstr_ignore_curses_error, ignore_curses_error]):
                 pass
             else:
                 raise e
@@ -108,7 +118,7 @@ class CursesWindow:
             self.window.addnstr(*args)
         except curses.error as e:
             # Writing outside the window, subwindow, or pad raises curses.error.
-            if ignore_curses_error:
+            if any([self.addstr_ignore_curses_error, ignore_curses_error]):
                 pass
             else:
                 raise e
@@ -203,11 +213,11 @@ class CursesWindowText:
             width = self.__window.cols
         return "{:^{}}".format(text, width)
 
-    def shorten(self, text: str, width: int = None, placeholder: str = '', **kwargs) -> str:
+    def shorten(self, text: str, width: int = None, **kwargs) -> str:
         """Collapse and truncate the given text to fit in the given width."""
         if not width:
             width = self.__window.cols
-        return textwrap.shorten(text, width, placeholder=placeholder, **kwargs)
+        return textwrap.shorten(text, width, **kwargs)
 
     def wrap(self, text: str, width: int = None, **kwargs) -> List[str]:
         """Wraps the single paragraph in text (a string) so every line is at most width characters long. Returns a list of output lines, without final newlines."""
