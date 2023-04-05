@@ -1,113 +1,99 @@
+from curses_wrapper import wrapper
 from curses_wrapper.color import CursesColor, CursesColorPair
 from curses_wrapper.window import CursesWindow, CursesWindowText
 
 import curses
 
-
-try:
-    # Initialize screen
-    stdscr = curses.initscr()
+def draw(window):
     curses.noecho()
     curses.cbreak()
     curses.curs_set(0)
     curses.set_escdelay(1)
-    stdscr.keypad(True)
 
-    # Initialize colors
+    # Allow window to be resized to minimum size.
+    # Normally writing outside the window, subwindow, or pad raises curses.error.
+    window.addstr_ignore_curses_error = True
+
+    # Create window text helper
+    window_text = CursesWindowText(window)
+
+    # Start 10-bit colors in curses
     curses_color = CursesColor()
     curses_color.start_color()
     curses_color.init_colors()
 
     curses_color_pair = CursesColorPair(curses_color)
-    curses_color_pair.init_pairs()
     curses_color_pair.init_pairs(bg_color_name="BLACK")
-    curses_color_pair.init_pairs(bg_color_name="WHITE")
-    curses_color_pair.init_pairs(bg_color_name="SKY")
-    curses_color_pair.init_pairs(bg_color_name="GRAY")
-    
-    # Initialize windows
-    window = CursesWindow(curses.LINES, curses.COLS, 0, 0, has_box=False)
-    window_text = CursesWindowText(window)
+    curses_color_pair.init_pair("AZURE", "WHITE")
+    curses_color_pair.init_pair("GOLD", "BLACK")
+    curses_color_pair.init_pair("BLACK", "SKY")
+    curses_color_pair.init_pair("BLACK", "WHITE")
 
-    # Arbitrary window modifications
-    window.window.bkgd(curses_color_pair.get("GOLD_ON_BLACK"))
+    # Set window background color
+    window.bkgd(curses_color_pair["WHITE_ON_BLACK"])
 
-    # Set ignore _curse.error when calling addstr or addnstr
-    window.addstr_ignore_curses_error = True
+    subwindow = CursesWindow(window=window.derwin(5, 10, 3, 5), has_box=True)
 
-    # Refresh screen after creating new windows
-    stdscr.refresh()
+    ch = 0
 
-    # Run screen
-    while True:
+    while (ch != ord('q')):
+
+        # Declaration of strings
+        title = window_text.align_center("Curses example")
+        subtitle = window_text.align_center("Written by Aidan Melen")
+        space_line = " " * window.cols
+        align_left = "align left"
+        align_center = "align center"
+        align_right = "align right"
+        shortened_text = window_text.shorten(", ".join(["shortened with window_text"] * 10))
+        wrapped_text = "".join(window_text.wrap(", ".join(["wrapped with window_text"] * 10)))
+        status_bar = window_text.align_center(f"Press 'q' to exit | STATUS BAR | Size: {window.lines}, {window.cols}")
         
-        # Paint text
-        window.addstr(0, 0, f"position: ({window.y}, {window.x})", curses_color_pair.get("CYAN_ON_BLACK"))
-        window.addstr(1, 0, f"win size: ({window.lines}, {window.cols})", curses_color_pair.get("CYAN_ON_BLACK"))
-        window.addstr(2, 0, f"max size: ({curses.LINES}, {curses.COLS})", curses_color_pair.get("CYAN_ON_BLACK"))
+        center_y, center_x = window.center_position
+
+        # Rendering some text
+        window.attron(curses_color_pair["AZURE_ON_WHITE"] | curses.A_BOLD)
+        window.addstr(0, 0, space_line)
+        window.addstr(0, 0, align_left)
+        window.addstr(0, window.cols // 2 - len(align_center) // 2, align_center)
+        window.addstr(0, window.cols - len(align_right), align_right)
+        window.attroff(curses_color_pair["AZURE_ON_WHITE"] | curses.A_BOLD)
+
         
-        # Normally we would only refresh after all content changes. However, this will display the real-time refresh times.
+        # Render shortened text
+        window.attron(curses_color_pair["WHITE_ON_BLACK"])
+        window.addnstr(center_y + 1, 0, ", ".join(["shortened with addnstr()"] * 10), window.cols)
+        window.addstr(center_y + 2, 0, shortened_text)
+
+        # Render wrapped text
+        window.addstr(center_y + 4, 0, ", ".join(["wrapped with addstr()"] * 10))
+        window.addstr(center_y + 8, 0, wrapped_text)
+        window.attroff(curses_color_pair["WHITE_ON_BLACK"])
+
+        # Rendering title
+        top_quarter_y = center_y - center_y // 2
+        window.addstr(top_quarter_y, 0, title, curses_color_pair["GOLD_ON_BLACK"] | curses.A_BOLD)
+        window.addstr(top_quarter_y + 1, 0, subtitle, curses_color_pair["WHITE_ON_BLACK"])
+
+        # Render status bar
+        window.addstr(window.lines - 1, 0, status_bar, curses_color_pair["BLACK_ON_SKY"])
+
+        # Refresh the screen
+        subwindow.refresh()
         window.refresh()
-        window.addstr(3, 0, f"refresh time: {window.refresh_time}", curses_color_pair.get("CYAN_ON_BLACK"))
-        window.addstr(4, 0, f"refresh elapsed time: {window.refresh_elapsed_time}", curses_color_pair.get("CYAN_ON_BLACK"))
 
-        # Window text
-        long_text = ", ".join(["very long text"] * 10)
+        # Wait for next input
+        ch = window.getch()
 
-        # Add shortened window text
-        shortened_text = window_text.shorten(", ".join(["shorten"] * 10))
-        window.addstr(7, 0, shortened_text, curses_color_pair.get("BLACK_ON_WHITE"))
-
-        # Add window text with addnstr
-        window.addnstr(11, 0, long_text, window.cols, curses_color_pair.get("BLACK_ON_WHITE"))
-
-        # Add shortened/aligned window text
-        align_left_shortened_text = window_text.align_left(
-            window_text.shorten(
-                ", ".join(["align left and shorten"] * 10)
-            )
-        )
-        window.addstr(9, 0, align_left_shortened_text, curses_color_pair.get("BLACK_ON_WHITE"))
-
-        # Add text with default cursor wrapping
-        window.addstr(13, 0, long_text, curses_color_pair.get("BLACK_ON_SKY"))
-
-        # Add window wrapped/aligned text
-        wrapped_lines = window_text.wrap(", ".join(["align left and wrap"] * 10))
-        align_left_wrapped_text = ''.join([window_text.align_left(line) for line in wrapped_lines])
-        window.addstr(16, 0, align_left_wrapped_text, curses_color_pair.get("BLACK_ON_SKY"))
-
-        # Add text with default cursor wrapping, but with wrap + max_lines to ensure lines are written on screen
-        y = 20
-        wrapped_longer_text = ''.join(window_text.wrap(", ".join(["wrap with max lines"] * 100), max_lines=window.lines-1-y, placeholder=''))
-        window.addstr(y, 0, window_text.align_right(wrapped_longer_text), curses_color_pair.get("WHITE_ON_GRAY"))
-
-        # Add text in the center of the screen.
-        center_lines, center_cols = window.center_position
-        center_msg = f"center: ({center_lines}, {center_cols})"
-        window.addstr(center_lines, center_cols - len(center_msg) // 2, center_msg, curses_color_pair.get("MAGENTA_ON_BLACK"))
-        
-        # Add text to last window line. Ignore curses.error when writing text outside.
-        window.addstr(window.lines - 1, 0, "This is the last line.", curses_color_pair.get("MAGENTA_ON_BLACK"))
-
-        # Refresh window
-        window.refresh() # refresh before gathering user input
-
-        # Get input ascii character
-        ch = stdscr.getch()
-
-        # Handle resize event
+        # Handle resize
         if ch == curses.KEY_RESIZE:
-            stdscr.refresh()
             window.resize_max(should_refresh=True)
-        
-        elif ch == ord('q'):
-            break
-        
-        elif ch == 27:
-            break
 
-except KeyboardInterrupt:
-    pass
-finally:
-    curses.endwin()
+            parent_y, parent_x = subwindow.getparyx()
+            subwindow.resize(max(5, parent_y), max(parent_x, 10), should_refresh=True)
+
+def main():
+    wrapper(draw)
+
+if __name__ == "__main__":
+    main()

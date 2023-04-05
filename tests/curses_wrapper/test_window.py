@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 from curses_wrapper import CursesWindow
 import curses
-import time
 import pytest
 
 
@@ -11,8 +10,6 @@ def test_curses_window_init(curses_window):
     assert curses_window._y == 2
     assert curses_window._x == 2
     assert not curses_window.has_box
-    assert curses_window._refresh_time == 1.0
-    assert curses_window._refresh_elapsed_time == 0
     assert curses.newwin.called
 
 
@@ -44,22 +41,14 @@ def test_curses_window_position(curses_window):
     assert curses_window.position == (2, 2)
 
 
-def test_curses_window_refresh_time(curses_window):
-    assert curses_window.refresh_time == 1.0
+# @property
+# def addstr_ignore_curses_error(self):
+#     return self._addstr_ignore_curses_error
 
-
-def test_curses_window_update_refresh_time(curses_window, mock_time_perf_counter):
-    mock_time_perf_counter.return_value = 5.0
-    curses_window._update_refresh_time()
-    assert curses_window.refresh_time == 5.0
-
-
-def test_curses_window_getmaxyx(curses_window):
-    with patch.object(curses_window.window, "getmaxyx") as mock_getmaxyx:
-        mock_getmaxyx.return_value = (200, 200)
-        max_size = curses_window.getmaxyx()
-        assert mock_getmaxyx.called
-        assert max_size == (200, 200)
+# @addstr_ignore_curses_error.setter
+# def addstr_ignore_curses_error(self, value):
+#     bool_value = value == True
+#     self._addstr_ignore_curses_error = bool_value
 
 
 def test_curses_window_addstr(curses_window):
@@ -153,38 +142,15 @@ def test_curses_window_resize(curses_window):
                 assert mock_refresh.called
                 assert not mock_noutrefresh.called
 
+def test_curses_window_getattr(curses_window):
+    with patch.object(curses_window.window, "hline") as mock_hline:
+        curses_window.hline()
+        mock_hline.assert_called_once()
 
-# def test_curses_window_resize_max_cols(curses_window):
-#     with patch.object(curses_window.window, "resize") as mock_resize:
-#         with patch.object(curses_window, "refresh") as mock_refresh:
-#             curses_window.resize_max_cols()
-#             assert curses_window.lines == 5
-#             assert curses_window.cols == 100
-#             assert mock_resize.called
-#             assert not mock_refresh.called
+    with patch.object(curses_window.window, "derwin") as mock_derwin:
+        curses_window.derwin()
+        mock_derwin.assert_called_once()
 
-
-# def test_curses_window_resize_max_lines(curses_window):
-#     with patch.object(curses_window.window, "resize") as mock_resize:
-#         with patch.object(curses_window, "refresh") as mock_refresh:
-#             curses_window.resize_max_lines()
-#             assert curses_window.lines == 100
-#             assert curses_window.cols == 10
-#             assert mock_resize.called
-#             assert not mock_refresh.called
-
-
-# def test_curses_window_resize_max(curses_window):
-#     with patch.object(curses_window.window, "resize") as mock_resize:
-#         with patch.object(curses_window, "refresh") as mock_refresh:
-#             curses_window.resize_max()
-#             assert curses_window.lines == 100
-#             assert curses_window.cols == 100
-#             assert mock_resize.called
-#             assert not mock_refresh.called
-
-
-def test_curses_window_clear(curses_window):
-    with patch.object(curses_window.window, "clear") as mock_clear:
-        curses_window.clear()
-        assert mock_clear.called
+    with patch.object(curses_window.window, "getmaxyx") as mock_getmaxyx:
+        curses_window.getmaxyx()
+        mock_getmaxyx.assert_called_once()

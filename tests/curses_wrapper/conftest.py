@@ -3,7 +3,6 @@ from unittest.mock import patch
 from curses_wrapper import CursesWindow, CursesColor, CursesColorPair
 import curses
 import pytest
-import time
 
 
 @pytest.fixture
@@ -27,14 +26,7 @@ def mock_curses():
 
 
 @pytest.fixture
-def mock_time_perf_counter():
-    with patch("time.perf_counter") as mock_time_perf_counter:
-        mock_time_perf_counter.return_value = 1.0
-        yield mock_time_perf_counter
-
-
-@pytest.fixture
-def curses_window(mock_curses, mock_time_perf_counter):
+def curses_window(mock_curses):
     return CursesWindow(5, 10, 2, 2)
 
 

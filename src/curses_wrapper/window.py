@@ -1,18 +1,20 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Callable, Any, Optional
 import textwrap
 import curses
-import time
 
 
 class CursesWindow:
     """A wrapper around the curses window functionality.
 
-    This class provides a higher-level interface to the curses window
-    functionality.
+    This class provides additional functionality and customization options for `curses.window` functions,
+    while still allowing access to all of the underlying `curses.window` functionality.
+
+    For more information on the `curses.window` object and its functions, see the Python documentation:
+    https://docs.python.org/3/library/curses.html#window-objects
     """
 
     def __init__(
-        self, lines: int, cols: int, y: int = 0, x: int = 0, has_box: bool = False
+        self, lines: int = None, cols: int = None, y: int = 0, x: int = 0, window: curses.window = None, has_box: bool = False
     ) -> None:
         """
         Initialize a CursesWindow object.
@@ -24,14 +26,27 @@ class CursesWindow:
         - x (int, optional): the x-coordinate of the top left corner of the window. Default is 0.
         - has_box (bool, optional): whether or not to draw a box around the window. Default is False.
         """
-        self._lines = lines
-        self._cols = cols
-        self._y = y
-        self._x = x
+        if not any([lines, cols, window]):
+            raise ValueError("One of lines and cols or window must be provided.")
+        
+        if all([lines, cols]):
+            self._lines = lines
+            self._cols = cols
+            self._y = y
+            self._x = x
+            self._window = curses.newwin(lines, cols, y, x)
+        elif window:
+            lines, cols = window.getmaxyx()
+            y, x = window.getbegyx()
+            self._lines = lines
+            self._cols = cols
+            self._y = y
+            self._x = x
+            self._window = window
+        else:
+            raise ValueError("One of lines and cols or window must be provided.")
+
         self.has_box = has_box
-        self._window = curses.newwin(lines, cols, y, x)
-        self._refresh_time = time.perf_counter()
-        self._refresh_elapsed_time = 0.0
         self._addstr_ignore_curses_error = False
 
     @property
@@ -74,25 +89,6 @@ class CursesWindow:
         return (self._lines // 2, self._cols // 2)
 
     @property
-    def refresh_time(self) -> float:
-        """Returns the time (in seconds) since the window was last refreshed."""
-        return self._refresh_time
-
-    @property
-    def refresh_elapsed_time(self) -> float:
-        return self._refresh_elapsed_time
-
-    def _update_refresh_time(self) -> None:
-        """Update the refresh time and the elapsed time since the last refresh."""
-        current_time = time.perf_counter()
-        self._refresh_elapsed_time = round(current_time - self._refresh_time, 9)
-        self._refresh_time = current_time
-
-    def getmaxyx(self) -> None:
-        """Return a tuple (y, x) of the height and width of the window."""
-        return self._window.getmaxyx()
-
-    @property
     def addstr_ignore_curses_error(self):
         return self._addstr_ignore_curses_error
     
@@ -101,7 +97,7 @@ class CursesWindow:
         bool_value = value == True
         self._addstr_ignore_curses_error = bool_value
 
-    def addstr(self, *args, ignore_curses_error=False):
+    def addstr(self, *args, ignore_curses_error: bool = False) -> None:
         """Paint the character string str at (y, x) with attributes attr, overwriting anything previously on the display."""
         try:
             self.window.addstr(*args)
@@ -112,7 +108,7 @@ class CursesWindow:
             else:
                 raise e
 
-    def addnstr(self, *args, ignore_curses_error=False):
+    def addnstr(self, *args, ignore_curses_error: bool = False) -> None:
         """Paint at most n characters of the character string str at (y, x) with attributes attr, overwriting anything previously on the display."""
         try:
             self.window.addnstr(*args)
@@ -123,19 +119,9 @@ class CursesWindow:
             else:
                 raise e
 
-    def noutrefresh(self) -> None:
-        """Mark for refresh but wait."""
-        self._window.noutrefresh()
-
-    def doupdate(self) -> None:
-        """Update the physical screen."""
-        self._window.doupdate()
-        self._update_refresh_time()
-
     def refresh(self) -> None:
-        """Refresh the window and update the current refresh time."""
+        """Update the display immediately (sync actual screen with previous drawing/deleting methods)."""
         self._window.refresh()
-        self._update_refresh_time()
 
         if self.has_box:
             self._window.box()
@@ -145,33 +131,62 @@ class CursesWindow:
         self._lines = lines
         self._cols = cols
 
-        self.clear()
         self._window.resize(self._lines, self._cols)
-
+        
         if should_refresh:
+            self.clear()
             self.refresh()
 
         if should_noutrefresh:
+            self.clearok()
             self.noutrefresh()
 
     def resize_max_lines(self, should_refresh=False, should_noutrefresh=False) -> None:
         """Resize the window to the maximum lines of the entire terminal screen."""
         curses.update_lines_cols()
-        self.resize(curses.LINES, self._cols, should_refresh, should_noutrefresh)
+        self._lines = curses.LINES - 1 - self.y
+        self.resize(self._lines, self._cols, should_refresh, should_noutrefresh)
 
     def resize_max_cols(self, should_refresh=False, should_noutrefresh=False) -> None:
-        """Resize the window to the maximum columes of the entire terminal screen."""
+        """Resize the window to the maximum columns of the entire terminal screen."""
         curses.update_lines_cols()
-        self.resize(self._lines, curses.COLS, should_refresh, should_noutrefresh)
+        self._cols = curses.COLS - 1 - self.x
+        self.resize(self._lines, self._cols , should_refresh, should_noutrefresh)
 
     def resize_max(self, should_refresh=False, should_noutrefresh=False) -> None:
-        """Resize the window to the maximum size of the entire terminal screen."""
+        """Resize the window to the maximum size (lines, columns) of the entire terminal screen."""
         curses.update_lines_cols()
-        self.resize(curses.LINES, curses.COLS, should_refresh, should_noutrefresh)
+        self._lines = curses.LINES - 1 - self.y
+        self._cols = curses.COLS - 1 - self.x
+        self.resize(self._lines, self._cols, should_refresh, should_noutrefresh)
 
-    def clear(self) -> None:
-        """Clear the contents of the window."""
-        self._window.clear()
+    def __getattr__(self, attr: str) -> Callable[..., Any]:
+        """
+        Dynamically generates a method that calls the specified `curses.window` function.
+
+        This method is called when a method is accessed on an instance of `MyCursesWindow`
+        that does not exist on the class itself. If the method exists on the underlying
+        `curses.window` object, a new method is dynamically generated that calls the
+        underlying function with the same arguments.
+
+        Args:
+            attr (str): The name of the method being accessed.
+
+        Returns:
+            A dynamically generated method that calls the specified `curses.window` function.
+
+        Raises:
+            AttributeError: If the specified method does not exist on the underlying `curses.window` object.
+        """
+        # check if the attribute exists in curses.window
+        if hasattr(self.window, attr):
+            # if it does, dynamically generate a method that calls the curses.window function
+            def wrapper(*args):
+                return getattr(self.window, attr)(*args)
+            return wrapper
+        else:
+            # if it doesn't, raise an AttributeError
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attr}'")
 
 
 class CursesWindowText:
@@ -195,37 +210,37 @@ class CursesWindowText:
         """
         self.__window = window
     
-    def align_left(self, text: str, width: int = None) -> str:
+    def align_left(self, text: str, width: Optional[int] = None) -> str:
         """Align left and pad the given text given width."""
         if not width:
             width = self.__window.cols
         return "{:<{}}".format(text, width)
     
-    def align_right(self, text: str, width: int = None) -> str:
+    def align_right(self, text: str, width: Optional[int] = None) -> str:
         """Align right and pad the given text given width."""
         if not width:
             width = self.__window.cols
         return "{:>{}}".format(text, width)
     
-    def align_center(self, text: str, width: int = None) -> str:
+    def align_center(self, text: str, width: Optional[int] = None) -> str:
         """Align center and pad the given text given width."""
         if not width:
             width = self.__window.cols
         return "{:^{}}".format(text, width)
 
-    def shorten(self, text: str, width: int = None, **kwargs) -> str:
+    def shorten(self, text: str, width: Optional[int] = None, **kwargs: Dict[str, Any]) -> str:
         """Collapse and truncate the given text to fit in the given width."""
         if not width:
             width = self.__window.cols
         return textwrap.shorten(text, width, **kwargs)
 
-    def wrap(self, text: str, width: int = None, **kwargs) -> List[str]:
+    def wrap(self, text: str, width: Optional[int] = None, **kwargs: Dict[str, Any]) -> List[str]:
         """Wraps the single paragraph in text (a string) so every line is at most width characters long. Returns a list of output lines, without final newlines."""
         if not width:
             width = self.__window.cols
         return textwrap.wrap(text, width, **kwargs)
     
-    def fill(self, text: str, width: int = None, **kwargs) -> str:
+    def fill(self, text: str, width: Optional[int] = None, **kwargs: Dict[str, Any]) -> str:
         if not width:
             width = self.__window.cols
         return textwrap.fill(text, width, **kwargs)
