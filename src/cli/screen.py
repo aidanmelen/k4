@@ -1,35 +1,23 @@
+from curses_wrapper.color import CursesColor, CursesColorPair
 from .window import MenuWindow, CommandWindow, ContentWindow
+from .color import curses_color, curses_color_pair
+
 import curses
 
-
-class CursesScreen:
-    def __init__(self, stdscr=None):
-        """
-        The k4 screen class with 3 standard windows: menu, command, content
-
-        Context: None                     __      _____
-        <?> Help                         |  | __ /  |  |
-        <:> navigate                     |  |/ //   |  |_ <- menu window
-        <s> search                       |    </    ^   /
-        <i> Internal                     |__|_ \____   |
-                                              \/    |__|
-        ┌────────────────────────────────────────────────┐
-        │ > textpad                                      │<- command window
-        └────────────────────────────────────────────────┘
-        ┌─────────────────── Topics[4] ──────────────────┐
-        │ TOPIC                              PARTITION   │
-        │ _schemas                           1           │
-        │ connect-configs                    1         <---- scroll window
-        │ connect-offsets                    25          │
-        │ connect-status                     5           │<- content window
-        │                                                │
-        └────────────────────────────────────────────────┘
-        """
+class Screen:
+    def __init__(self, stdscr):
         if stdscr:
             self.stdscr = stdscr
         else:
             self.stdscr = curses.initscr()
 
+        # Start colors and init color pairs
+        # NOTE: requires curses.initscr()
+        curses_color.start_color()
+        curses_color.init_colors()
+        curses_color_pair.init_pairs(bg_color_name = "BLACK")
+
+        self.stdscr.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         self.stdscr.keypad(True)
         curses.noecho()
         curses.cbreak()
@@ -40,23 +28,30 @@ class CursesScreen:
         self.content_window = ContentWindow(curses.LINES - (6 + 3), curses.COLS, 6 + 3, 0)
 
         self.stdscr.refresh()
-        self.content_window.window.border()
-        self.content_window.window.refresh()
+        self.content_window._window.refresh()
 
-        self._banner = None
-        self._contents = []
+        self.focus = "topics"
+
+        # TODO get dynamically
+        self.contents = [
+            "TOPIC                              PARTITION",
+            "_schemas_schemaregistry_confluent  1        ",
+            "confluent.connect-configs          1        ",
+            "confluent.connect-offsets          25       ",
+            "confluent.connect-status           5        "
+        ]
 
     @property
-    def banner(self):
-        return self._banner
+    def focus(self):
+        return self._focus
 
     @property
     def contents(self):
         return self._contents
 
-    @banner.setter
-    def banner(self, value):
-        self._banner = value
+    @focus.setter
+    def focus(self, value):
+        self._focus = value
 
     @contents.setter
     def contents(self, value):
@@ -73,19 +68,41 @@ class CursesScreen:
         self.menu_window.render()
         self.command_window.render()
 
-        if self._banner and self._contents:
-            self.content_window.render(self._banner, self._contents)
-
-    def erase(self):
-        self.stdscr.erase()
-        self.menu_window.erase()
-        self.command_window.erase()
-        self.content_window.erase()
+        if self._focus and self._contents:
+            self.content_window.render(self._focus, self._contents)
 
 
-class TopicScreen(CursesScreen):
-    def __init__(self):
-        """
-        The k4 topic screen class.
-        """
-        super().__init__()
+def main(stdscr) -> None:
+    try:
+        screen = Screen(stdscr)
+
+        while True:
+            screen.render()
+            ch = screen.stdscr.getch()
+            command = screen.command_window.handle_input(ch)
+
+            if command in ["topics", "tops", "t"]:
+                screen.focus = "topics"
+
+                # TODO get dynamically
+                screen.contents = [
+                    "TOPIC                              PARTITION",
+                    "_schemas_schemaregistry_confluent  1        ",
+                    "confluent.connect-configs          1        ",
+                    "confluent.connect-offsets          25       ",
+                    "confluent.connect-status           5        "
+                ]
+
+            screen.menu_window.handle_input(ch)
+            screen.content_window.handle_input(ch)
+
+            if ch == curses.KEY_RESIZE:
+                screen.resize()
+
+            elif ch == ord('q'):
+                break
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        curses.endwin()

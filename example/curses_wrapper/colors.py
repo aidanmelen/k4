@@ -1,7 +1,7 @@
 from curses_wrapper.color import CursesColor, CursesColorPair
 import curses
 
-def main(screen):
+def main(stdscr):
     # Start colors and init color pairs
     curses_color = CursesColor()
     curses_color.start_color()
@@ -17,27 +17,25 @@ def main(screen):
     curses.cbreak()
 
     # Enable keypad mode
-    screen.keypad(True)
+    stdscr.keypad(True)
 
-    # Clear the screen
-    screen.clear()
+    # Clear the stdscr
+    stdscr.clear()
 
     # Display all color pairs
-    for color_pair_name, color_pair_number in curses_color_pair:
-        screen.addstr(f"█ {color_pair_name} █", curses_color_pair.get(color_pair_name))
-    else:
-        screen.addstr("\n\n")
+    try:
+        for color_pair_name, color_pair_number in curses_color_pair:
+            stdscr.addstr(f"█ {color_pair_name} █", curses_color_pair.get(color_pair_name))
+        else:
+            stdscr.addstr("\n\n")
+    except curses.error as e:
+        pass
     
-    # Refresh the screen
-    screen.refresh()
+    # Refresh the stdscr
+    stdscr.refresh()
 
     # Wait for user input
-    screen.getch()
-
-    # Restore terminal settings
-    curses.nocbreak()
-    screen.keypad(False)
-    curses.echo()
+    stdscr.getch()
 
 
 if __name__ == '__main__':

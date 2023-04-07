@@ -1,1 +1,1 @@
-from .helpers import open_editor
+from .editor import open_editor
