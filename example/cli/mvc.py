@@ -12,46 +12,57 @@ class BaseView:
         self.window = window
         self.window.clear()
 
-        y, x = self.window.getmaxyx()
+        max_y, max_x = self.window.getmaxyx()
 
-        if y > 8:
-            self.top_win = window.subwin(6, x, 0, 0)
+        # sub-window height and y-position book-keeping
+        top_h = 6
+        middle_h = max_y - 8
+        bottom_h = 2
+        bottom_y = max_y - 2
+
+        if max_y > top_h + bottom_h:
+            self.top_win = window.subwin(6, max_x, 0, 0)
             self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
-        elif y > 2:
-            self.top_win = window.subwin(y - 2, x, 0, 0)
+        elif max_y > bottom_h:
+            self.top_win = window.subwin(bottom_y, max_x, 0, 0)
             self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
         else:
             self.top_win = None
         
-        if y - 8 > 1:
-            self.middle_win = window.subwin(y - 8, x, 6, 0)
+        if middle_h > 1:
+            self.middle_win = window.subwin(middle_h, max_x, top_h, 0)
             self.middle_win.box()
         else:
             self.middle_win = None
 
-        self.bottom_win = window.subwin(1, x, y - 2, 0)
+        self.bottom_win = window.subwin(1, max_x, bottom_y, 0)
     
     def handle_resize(self):
-        y, x = self.window.getmaxyx()
-        self.window.resize(y, x)
+        max_y, max_x = self.window.getmaxyx()
+
+        self.window.resize(max_y, max_x)
         self.window.clear()
-        
+
+        # sub-window height and y-position book-keeping
+        top_h = 6
+        middle_h = max_y - 8
+        bottom_h = 2
+        bottom_y = max_y - 2
+
         if self.top_win:
-            if y > 8:
-                self.top_win.resize(5, x)
-            elif y > 2:
-                self.top_win.resize(y - 2, x)
-                # self.top_win.clear()
-            self.top_win.clear()
+            if max_y > top_h + bottom_h:
+                self.top_win.resize(5, max_x)
+            elif max_y > bottom_h:
+                self.top_win.resize(bottom_y, max_x)
 
         if self.middle_win:
-            if y - 8 > 1:
-                self.middle_win.resize(y - 8, x)
+            if middle_h > 1:
+                self.middle_win.resize(middle_h, max_x)
             else:
                 self.middle_win.clear()
 
-        self.bottom_win.mvwin(y - 2, 0)
-        self.bottom_win.resize(1, x)
+        self.bottom_win.mvwin(bottom_y, 0)
+        self.bottom_win.resize(1, max_x)
 
     def display_data(self, data):
         raise NotImplementedError
@@ -61,8 +72,6 @@ class BaseView:
 
 class TopicView(BaseView):
     def __init__(self, window):
-        self.window = window
-        self.window.clear()
         super().__init__(window)
     
     # def handle_resize(self):
@@ -89,15 +98,13 @@ class TopicView(BaseView):
             #     self.middle_win.addstr(1, 1 ,str(item) + "\n")
         
         # bottom
-        self.bottom_win.addstr(0, 1, " <Topic> ".lower(), curses.color_pair(10) | curses.A_REVERSE)
+        self.bottom_win.addnstr(0, 1, " <Topic> ".lower(), x - 2, curses.color_pair(10) | curses.A_REVERSE)
 
     # def get_input(self):
     #     return self.window.getch()
 
-class ConsumerGroup(BaseView):
+class ConsumerGroupView(BaseView):
     def __init__(self, window):
-        self.window = window
-        self.window.clear()
         super().__init__(window)
 
     def display_data(self, data):
@@ -119,7 +126,7 @@ class ConsumerGroup(BaseView):
             #     self.middle_win.addstr(1, 1 ,str(item) + "\n")
         
         # bottom
-        self.bottom_win.addstr(0, 1, " <ConsumerGroup> ".lower(), curses.color_pair(10) | curses.A_REVERSE)
+        self.bottom_win.addnstr(0, 1, " <ConsumerGroup> ".lower(), x - len(" <ConsumerGroup> ") - 1, curses.color_pair(10) | curses.A_REVERSE)
 
     # def get_input(self):
     #     return self.window.getch()
@@ -134,14 +141,14 @@ class Navigation:
         self.current_view = 'TopicView'
         self.views = {
             'TopicView': TopicView,
-            'ConsumerGroup': ConsumerGroup
+            'ConsumerGroupView': ConsumerGroupView
         }
 
     def navigate(self, key):
         if key == ord('1'):
             self.current_view = 'TopicView'
         elif key == ord('2'):
-            self.current_view = 'ConsumerGroup'
+            self.current_view = 'ConsumerGroupView'
 
     def get_current_view(self, window):
         return self.views[self.current_view](window)
