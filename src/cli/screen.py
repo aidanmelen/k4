@@ -58,7 +58,7 @@ class Screen:
         self._contents = value
 
     def resize(self):
-        self.stdscr.erase()
+        # self.stdscr.erase()  # causes flickering
         self.stdscr.refresh()
         self.menu_window.resize()
         self.command_window.resize()

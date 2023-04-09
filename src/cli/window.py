@@ -34,13 +34,21 @@ class BaseWindow():
         elapsed_time = current_time - self.last_render_time
 
 class MenuWindow(BaseWindow):
+    # LOGO = [
+    #     ' ____      _____   ',
+    #     '|    | __ /  |  |  ',
+    #     '|    |/ //   |  |_ ',
+    #     '|      </    ^   / ',
+    #     '|____|_ \\____   | ',
+    #     '       \\/    |__| '
+    # ]
     LOGO = [
-        ' ____      _____   ',
-        '|    | __ /  |  |  ',
-        '|    |/ //   |  |_ ',
-        '|      </    ^   / ',
-        '|____|_ \\____   | ',
-        '       \\/    |__| '
+        ' ____  __.  _____         ',
+        '|    |/ _| /  |  | ______ ',
+        '|      <  /   |  |/  ___/ ',
+        '|    |  \\/    ^   \___ \\',
+        '|____|__ \\____   /____  >',
+        '        \\/    |__|    \\/'
     ]
 
     def __init__(self, h, w, y, x):
@@ -74,10 +82,9 @@ class MenuWindow(BaseWindow):
         for idx, k in enumerate(info.keys()):
             key_str = f"{k.capitalize()}: "
             value_str = str(info[k])
-            max_value_str = self.max_w - 1 - len(key_str)
+            max_value_str = self.max_w - 1 - len(key_str) - len(self.LOGO[0])
 
-            if self.max_w - 1 > 0:
-                self._window.addstr(idx, 1, key_str, curses_color_pair["GOLDENROD_ON_BLACK"])
+            self._window.addnstr(idx, 1, key_str, self.max_w, curses_color_pair["GOLDENROD_ON_BLACK"])
 
             if max_value_str > 0:
                 self._window.addnstr(idx, 1 + len(key_str), value_str, max_value_str, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
@@ -107,12 +114,9 @@ class MenuWindow(BaseWindow):
                 self._window.addnstr(idx, 60 + len(key_str), value_str, max_value_str, curses_color_pair["GRAY_ON_BLACK"])
 
         # logo
-        try:
-            for y, line in enumerate(self.LOGO):
-                x = max(self.max_w - len(self.LOGO[0]), 0)
-                self._window.addstr(max(y, 0), x, line, curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD)
-        except curses.error as e:
-            pass
+        for idx, line in enumerate(self.LOGO):
+            x = max(self.max_w - len(self.LOGO[0]), 0)
+            self._window.addnstr(max(idx, 0), x, line, self.max_w - 1, curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD)
 
         self._window.refresh()
 
@@ -194,8 +198,8 @@ class ContentWindow(BaseWindow):
         self._window.border()
         self._window.bkgd(curses_color_pair["SKY_ON_BLACK"])
 
-        self.scroll_h = h-2
-        self.scroll_w = w-4
+        self.scroll_h = h - self.PAD * 2
+        self.scroll_w = w - self.PAD * 3
         self._scroll_window = curses.newwin(self.scroll_h, self.scroll_w, y + self.PAD, x + (self.PAD * 2))
         self._scroll_window.bkgd(curses_color_pair["SKY_ON_BLACK"])
 
@@ -246,6 +250,8 @@ class ContentWindow(BaseWindow):
             self.top += min(self.max_lines, self.bottom - self.top - 1)
 
     def resize(self):
+        self._window.erase()
+        self._scroll_window.erase()
 
         curses.update_lines_cols()
         self.max_h = curses.LINES
@@ -253,27 +259,24 @@ class ContentWindow(BaseWindow):
 
         self.h = self.max_h - 6 - 3
 
-        # Scrolling controls
-        if self.scroll_h > 0:
-            self.scroll_h = self.h - self.PAD * 2 # horizontal content borders
-            self.scroll_w = self.max_w - self.PAD * 3  # 1 PAD and 2 vertical content borders
-            self.max_lines = self.scroll_h
-            self.current = min(self.current, self.max_lines)  # Make sure the current selected line is always on screen
+        self._window.resize(self.h, self.max_w)
+        self._window.box()
+        self._window.refresh()
 
-            self._scroll_window.erase()
+        # Scroll book-keeping
+        self.scroll_h = self.h - self.PAD * 2 # top and bottom horizontal content borders
+        self.scroll_w = self.max_w - self.PAD * 3 # 1 PAD and 2 vertical content borders
+        self.max_lines = self.scroll_h
+        self.current = min(self.current, self.max_lines)  # Make sure the current selected line is always on screen
+
+        if self.scroll_h > 1:
             self._scroll_window.resize(self.scroll_h, self.scroll_w)
             self._scroll_window.refresh()
 
-        try:
-            self._window.erase()
-            self._window.resize(self.h, self.max_w)
-            self._window.box()
-            self._window.refresh()
-        except curses.error as e:
-            # Ignore the event if the terminal is too small
-            pass
 
     def render(self, banner=None, contents=[]):
+
+        self._scroll_window.erase()
 
         # display banner
         if banner:
@@ -295,38 +298,32 @@ class ContentWindow(BaseWindow):
                 self._window.addstr(banner_6, curses_color_pair["CYAN_ON_BLACK"])
                 self._window.refresh()
 
-            self.bottom = len(contents)  # update bottom for scrolling calculations
 
-        
-        self._scroll_window.erase()
+        self.bottom = len(contents)  # update bottom for scrolling calculations
 
-        try:
-            if self.scroll_h > 0:
-                # Only display the scrollable lines in focus
-                headers = contents[0]
-                for idx, item in enumerate(contents[self.top:self.top + self.max_lines]):
+        # Only display the scrollable lines in focus
+        headers = contents[0]
+        for idx, item in enumerate(contents[self.top:self.top + self.max_lines]):
 
-                    # Truncate the item to the width of the window
-                    text = item[:self.scroll_w - self.PAD * 3]
+            # Truncate the item to the width of the window
+            text = item[:self.scroll_w - self.PAD * 2]
 
-                    # Add right PAD to the item for cursor highlighting
-                    right_pad = ' ' * (self.scroll_w - len(item)) 
+            # Add right PAD to the item for cursor highlighting
+            right_space_highlight = ' ' * (self.scroll_w - len(item) - 1) 
 
-                    # Highlight the current cursor headers line
-                    if item == headers and min(self.current, self.max_lines - 1) == 0:
-                        self._scroll_window.addstr(idx, 0, text + right_pad, curses_color_pair["WHITE_ON_BLACK"] | curses.A_REVERSE)
-                    elif idx == 0 and min(self.current, self.max_lines) != 0:
-                        self._scroll_window.addstr(idx, 0, text, curses_color_pair["WHITE_ON_BLACK"])
+            # Highlight the current cursor headers line
+            if text == headers and self.current == 0:
+                self._scroll_window.addstr(idx, 0, text + right_space_highlight, curses_color_pair["WHITE_ON_BLACK"] | curses.A_REVERSE)
+            elif idx == 0 and item == headers:
+                self._scroll_window.addstr(idx, 0, text, curses_color_pair["WHITE_ON_BLACK"])
+            
+            # Highlight the current cursor line
+            elif idx == self.current:
+                self._scroll_window.addstr(idx, 0, text + right_space_highlight, curses_color_pair["SKY_ON_BLACK"] | curses.A_REVERSE)
+            else:
+                self._scroll_window.addstr(idx, 0, text, curses_color_pair["SKY_ON_BLACK"])
 
-                    # # Highlight the current cursor line
-                    elif idx == min(self.current, self.max_lines - 1):
-                        self._scroll_window.addstr(idx, 0, text + right_pad, curses_color_pair["SKY_ON_BLACK"] | curses.A_REVERSE)
-                    else:
-                        self._scroll_window.addstr(idx, 0, text, curses_color_pair["SKY_ON_BLACK"])
-
-                self._scroll_window.refresh()
-        except curses.error as e:
-            pass
+        self._scroll_window.refresh()
 
     def handle_input(self, ch):        
         # Handle arrow scrolling inputs
