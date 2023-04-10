@@ -1,71 +1,136 @@
 import curses
+import textwrap
+
+
+MOCK_TOPIC_DATA = {
+    "name": "topic",
+    "content": [
+        "TOPIC                              PARTITION",
+        "_schemas_schemaregistry_confluent  1        ",
+        "confluent.connect-configs          1        ",
+        "confluent.connect-offsets          25       ",
+        "confluent.connect-status           5        "
+    ]
+}
+
+MOCK_CONSUMER_GROUP_DATA = {
+    "name": "topic",
+    "content": [
+        "CONSUMER-GROUP                     PARTITION",
+        "_schemas_schemaregistry_confluent  1        ",
+        "confluent.connect-configs          1        ",
+        "confluent.connect-offsets          25       ",
+        "confluent.connect-status           5        "
+    ]
+}
 
 class Model:
     def __init__(self):
         self.data = []
 
     def add_data(self, data):
+
+        assert "name" in data
+        assert "content" in data
+
+
         self.data.append(data)
 
 class BaseView:
+    LOGO = [
+        ' ____      _____   ',
+        '|    | __ /  |  |  ',
+        '|    |/ //   |  |_ ',
+        '|      </    ^   / ',
+        '|____|_ \\____   | ',
+        '       \\/    |__| '
+    ]
+
     def __init__(self, window):
         self.window = window
         self.window.clear()
 
-        max_y, max_x = self.window.getmaxyx()
-
         # sub-window height and y-position book-keeping
-        top_h = 6
-        middle_h = max_y - 8
-        bottom_h = 2
-        bottom_y = max_y - 2
+        self.max_y, self.max_x = self.window.getmaxyx()
+        self.top_h = 6
+        self.middle_h = self.max_y - 8
+        self.bottom_h = 2
+        self.bottom_y = self.max_y - 2
 
-        if max_y > top_h + bottom_h:
-            self.top_win = window.subwin(6, max_x, 0, 0)
+        if self.max_y > self.top_h + self.bottom_h:
+            self.top_win = window.subwin(6, self.max_x, 0, 0)
             self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
-        elif max_y > bottom_h:
-            self.top_win = window.subwin(bottom_y, max_x, 0, 0)
+        elif self.max_y > self.bottom_h:
+            self.top_win = window.subwin(self.bottom_y, self.max_x, 0, 0)
             self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
         else:
             self.top_win = None
         
-        if middle_h > 1:
-            self.middle_win = window.subwin(middle_h, max_x, top_h, 0)
+        if self.middle_h > 1:
+            self.middle_win = window.subwin(self.middle_h, self.max_x, self.top_h, 0)
             self.middle_win.box()
         else:
             self.middle_win = None
 
-        self.bottom_win = window.subwin(1, max_x, bottom_y, 0)
+        self.bottom_win = window.subwin(1, self.max_x, self.bottom_y, 0)
     
     def handle_resize(self):
-        max_y, max_x = self.window.getmaxyx()
+        # update sub-window height and y-position book-keeping
+        self.max_y, self.max_x = self.window.getmaxyx()
+        self.middle_h = self.max_y - 8
+        self.bottom_y = self.max_y - 2
 
-        self.window.resize(max_y, max_x)
+        self.window.resize(self.max_y, self.max_x)
         self.window.clear()
 
-        # sub-window height and y-position book-keeping
-        top_h = 6
-        middle_h = max_y - 8
-        bottom_h = 2
-        bottom_y = max_y - 2
-
         if self.top_win:
-            if max_y > top_h + bottom_h:
-                self.top_win.resize(5, max_x)
-            elif max_y > bottom_h:
-                self.top_win.resize(bottom_y, max_x)
+            if self.max_y > self.top_h + self.bottom_h:
+                self.top_h = 5
+                self.top_win.resize(self.top_h, self.max_x)
+            elif self.max_y > self.bottom_h:
+                self.top_h = self.bottom_y
+                self.top_win.resize(self.top_h, self.max_x)
+                self.top_win.clear()
+            else:
+                self.top_win.clear()
 
         if self.middle_win:
-            if middle_h > 1:
-                self.middle_win.resize(middle_h, max_x)
+            if self.middle_h > 1:
+                self.middle_win.resize(self.middle_h, self.max_x)
             else:
                 self.middle_win.clear()
 
-        self.bottom_win.mvwin(bottom_y, 0)
-        self.bottom_win.resize(1, max_x)
+        self.bottom_win.mvwin(self.bottom_y, 0)
+        self.bottom_win.resize(1, self.max_x)
 
-    def display_data(self, data):
-        raise NotImplementedError
+    def display_top_win(self, data):
+        if self.top_win:
+            # logo
+            for y, line in enumerate(self.LOGO):
+                x = max(self.max_x - len(self.LOGO[0]), 0)
+                
+                if y < min(self.top_h, self.bottom_y - 1):
+                    self.top_win.addnstr(max(y, 0), x, line[:self.max_x], self.max_x - 1, curses.A_BOLD)
+
+    
+    def display_middle_win(self, data):
+        if self.middle_win:
+            # banner
+            banner_line = f" {data['name'].capitalize()}s "
+            self.middle_win.addnstr(0, self.max_x // 2 - len(banner_line) // 2, banner_line, self.max_x - 2)
+
+            # content
+            for y, line in enumerate(data["content"]):
+                if y < self.middle_h - 2:
+                    self.middle_win.addnstr(y + 1, 1, line, self.max_x - 2) # adjust for window box edges
+    
+    def display_bottom_win(self, data):
+        self.bottom_win.addnstr(0, 1, f" <{data['name'].lower()}> ", self.max_x - 2, curses.color_pair(10) | curses.A_REVERSE)
+
+    def display(self, data):
+        self.display_top_win(data)
+        self.display_middle_win(data)
+        self.display_bottom_win(data)
 
     def get_input(self):
         return self.window.getch()
@@ -74,67 +139,16 @@ class TopicView(BaseView):
     def __init__(self, window):
         super().__init__(window)
     
-    # def handle_resize(self):
-    #     y, x = self.window.getmaxyx()
-    #     self.window.resize(y, x)
-    #     self.window.clear()
-
-    def display_data(self, data):
-        y, x = self.window.getmaxyx()
-
-        # top
-        idx = 0
-        if y > idx + 2:
-            self.top_win.addstr(idx, 1, "first")
-        
-        idx = 3
-        if y > idx + 2:
-            self.top_win.addstr(idx, 1, "second")
-
-        # middle
-        if self.middle_win:
-            self.middle_win.addstr(0, x // 2 - 4, " Topics ")
-            # for item in data:
-            #     self.middle_win.addstr(1, 1 ,str(item) + "\n")
-        
-        # bottom
-        self.bottom_win.addnstr(0, 1, " <Topic> ".lower(), x - 2, curses.color_pair(10) | curses.A_REVERSE)
+    # def display(self, data):
+    #     super().display(data)
 
     # def get_input(self):
-    #     return self.window.getch()
+    #     input = super().get_input(data)
+    #     return input
 
 class ConsumerGroupView(BaseView):
     def __init__(self, window):
         super().__init__(window)
-
-    def display_data(self, data):
-        y, x = self.window.getmaxyx()
-
-        # top
-        idx = 0
-        if y > idx + 2:
-            self.top_win.addstr(idx, 1, "first")
-        
-        idx = 3
-        if y > idx + 2:
-            self.top_win.addstr(idx, 1, "second")
-
-        # middle
-        if self.middle_win:
-            self.middle_win.addstr(0, x // 2 - 4, " ConsumerGroups ")
-            # for item in data:
-            #     self.middle_win.addstr(1, 1 ,str(item) + "\n")
-        
-        # bottom
-        self.bottom_win.addnstr(0, 1, " <ConsumerGroup> ".lower(), x - len(" <ConsumerGroup> ") - 1, curses.color_pair(10) | curses.A_REVERSE)
-
-    # def get_input(self):
-    #     return self.window.getch()
-
-    # def handle_resize(self):
-    #     y, x = self.window.getmaxyx()
-    #     self.window.resize(y, x)
-    #     self.window.clear()
 
 class Navigation:
     def __init__(self):
@@ -170,12 +184,15 @@ class Controller:
 
         self.navigation = Navigation()
 
-
     def run(self):
+
+        # initialize model data
+        self.model.data = MOCK_TOPIC_DATA
+
         while True:
             data = self.model.data
             view = self.navigation.get_current_view(self.screen.subwin(0, 0))
-            view.display_data(data)
+            view.display(data)
             user_input = view.get_input()
             if user_input == ord('q'):
                 break
