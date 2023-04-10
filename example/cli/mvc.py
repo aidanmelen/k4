@@ -4,7 +4,21 @@ import textwrap
 
 MOCK_TOPIC_DATA = {
     "name": "topic",
-    "content": [
+    "info": {
+        "context": None,
+        "cluster": None,
+        "user": None
+    },
+    "options": {
+        "1": "internal",
+    },
+    "controls": {
+        "ctrl-d": "Delete",
+        "d": "Describe",
+        "e": "Edit",
+        "?": "Help"
+    },
+    "contents": [
         "TOPIC                              PARTITION",
         "_schemas_schemaregistry_confluent  1        ",
         "confluent.connect-configs          1        ",
@@ -15,35 +29,49 @@ MOCK_TOPIC_DATA = {
 
 MOCK_CONSUMER_GROUP_DATA = {
     "name": "topic",
-    "content": [
-        "CONSUMER-GROUP                     PARTITION",
-        "_schemas_schemaregistry_confluent  1        ",
-        "confluent.connect-configs          1        ",
-        "confluent.connect-offsets          25       ",
-        "confluent.connect-status           5        "
+    "info": {
+        "context": None,
+        "cluster": None,
+        "user": None
+    },
+    "options": {
+        "1": "only_stable",
+        "2": "only_high_level",
+    },
+    "controls": {
+        "ctrl-d": "Delete",
+        "d": "Describe",
+        "e": "Edit",
+        "?": "Help"
+    },
+    "contents": [
+        "GROUP                                                   TOPIC                                                                                          PARTITION    CURRENT-OFFSET    LOG-END-OFFSET    LAG    CONSUMER-ID                                                                                                                                 HOST        CLIENT-ID",
+        "_confluent-controlcenter-7-3-0-0                        _confluent-controlcenter-7-3-0-0-MetricsAggregateStore-repartition                             9            -                 20404             20404  _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer-c146c998-cb96-4ecb-98a5-785bf08d3938          /10.1.3.98  _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer",
+        "_confluent-controlcenter-7-3-0-0                        _confluent-controlcenter-7-3-0-0-MonitoringMessageAggregatorWindows-ONE_MINUTE-repartition     9            -                 0                 0      _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer-c146c998-cb96-4ecb-98a5-785bf08d3938          /10.1.3.98  _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer",
+        "_confluent-controlcenter-7-3-0-0                        _confluent-controlcenter-7-3-0-0-MonitoringMessageAggregatorWindows-THREE_HOURS-repartition    9            -                 0                 0      _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer-c146c998-cb96-4ecb-98a5-785bf08d3938          /10.1.3.98  _confluent-controlcenter-7-3-0-0-d74d63ac-128f-4564-8110-2ff76cf40c6b-StreamThread-7-consumer"
     ]
 }
 
 class Model:
     def __init__(self):
-        self.data = []
+        self.data = {}
 
     def add_data(self, data):
-
-        assert "name" in data
-        assert "content" in data
-
-
-        self.data.append(data)
+        # assert "name" in data
+        # assert "info" in data
+        # assert "options" in data
+        # assert "controls" in data
+        # assert "contents" in data
+        self.data = data
 
 class BaseView:
     LOGO = [
-        ' ____      _____   ',
-        '|    | __ /  |  |  ',
-        '|    |/ //   |  |_ ',
-        '|      </    ^   / ',
-        '|____|_ \\____   | ',
-        '       \\/    |__| '
+        ' ____      _____  ',
+        '|    | __ /  |  | ',
+        '|    |/ //   |  |_',
+        '|      </    ^   /',
+        '|____|_ \\____   |',
+        '       \\/    |__|'
     ]
 
     def __init__(self, window):
@@ -52,13 +80,13 @@ class BaseView:
 
         # sub-window height and y-position book-keeping
         self.max_y, self.max_x = self.window.getmaxyx()
-        self.top_h = 6
-        self.middle_h = self.max_y - 8
+        self.top_h = len(self.LOGO)
         self.bottom_h = 2
-        self.bottom_y = self.max_y - 2
+        self.middle_h = self.max_y - self.top_h - self.bottom_h
+        self.bottom_y = self.max_y - self.bottom_h
 
         if self.max_y > self.top_h + self.bottom_h:
-            self.top_win = window.subwin(6, self.max_x, 0, 0)
+            self.top_win = window.subwin(self.top_h, self.max_x, 0, 0)
             self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
         elif self.max_y > self.bottom_h:
             self.top_win = window.subwin(self.bottom_y, self.max_x, 0, 0)
@@ -77,17 +105,17 @@ class BaseView:
     def handle_resize(self):
         # update sub-window height and y-position book-keeping
         self.max_y, self.max_x = self.window.getmaxyx()
-        self.middle_h = self.max_y - 8
-        self.bottom_y = self.max_y - 2
+        self.middle_h = self.max_y - self.top_h - self.bottom_h
+        self.bottom_y = self.max_y - self.bottom_h
 
         self.window.resize(self.max_y, self.max_x)
         self.window.clear()
 
         if self.top_win:
             if self.max_y > self.top_h + self.bottom_h:
-                self.top_h = 5
+                self.top_h = len(self.LOGO)
                 self.top_win.resize(self.top_h, self.max_x)
-            elif self.max_y > self.bottom_h:
+            elif self.max_y > self.top_h:
                 self.top_h = self.bottom_y
                 self.top_win.resize(self.top_h, self.max_x)
                 self.top_win.clear()
@@ -107,10 +135,12 @@ class BaseView:
         if self.top_win:
             # logo
             for y, line in enumerate(self.LOGO):
-                x = max(self.max_x - len(self.LOGO[0]), 0)
-                
-                if y < min(self.top_h, self.bottom_y - 1):
-                    self.top_win.addnstr(max(y, 0), x, line[:self.max_x], self.max_x - 1, curses.A_BOLD)
+                if y == self.bottom_y:
+                    break
+
+                x = max(self.max_x - len(self.LOGO[0]) - 1, 0)
+                if y < min(self.bottom_y, len(self.LOGO)):
+                    self.top_win.addnstr(y, x, line, self.max_x, curses.A_BOLD)
 
     
     def display_middle_win(self, data):
@@ -119,10 +149,10 @@ class BaseView:
             banner_line = f" {data['name'].capitalize()}s "
             self.middle_win.addnstr(0, self.max_x // 2 - len(banner_line) // 2, banner_line, self.max_x - 2)
 
-            # content
-            for y, line in enumerate(data["content"]):
-                if y < self.middle_h - 2:
-                    self.middle_win.addnstr(y + 1, 1, line, self.max_x - 2) # adjust for window box edges
+            # contents
+            # for y, line in enumerate(data["contents"]):
+            #     if y < self.middle_h - 2:
+            #         self.middle_win.addnstr(y + 1, 1, line, self.max_x - 2) # adjust for window box edges
     
     def display_bottom_win(self, data):
         self.bottom_win.addnstr(0, 1, f" <{data['name'].lower()}> ", self.max_x - 2, curses.color_pair(10) | curses.A_REVERSE)

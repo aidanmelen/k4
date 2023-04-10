@@ -1,4 +1,5 @@
 from kafka_wrapper.consumer_group import ConsumerGroup
+from tabulate import tabulate
 import json
 
 
@@ -8,6 +9,38 @@ consumer_group = ConsumerGroup(admin_client_config, timeout=5)
 
 print("List all Consumer Groups")
 print(json.dumps(consumer_group.list(), indent=4), "\n\n")
+
+headers = [
+    "GROUP",
+    "TOPIC",
+    "PARTITION",
+    "CURRENT-OFFSET",
+    "LOG-END-OFFSET",
+    "LAG",
+    "CONSUMER-ID",
+    "HOST",
+    "CLIENT-ID",
+]
+group_rows = []
+for group, metadata in consumer_group.describe().items():
+    for m in metadata.get("members", []):
+        for a in m.get("assignments", []):
+            group_rows.append(
+                [
+                    group,
+                    a["topic"],
+                    a["partition"],
+                    a["current_offset"],
+                    a["log_end_offset"],
+                    a["lag"],
+                    m["id"],
+                    m["host"],
+                    m["client_id"],
+                ]
+            )
+
+print("Tabulate List all Consumer Groups")
+print(tabulate(group_rows, headers=headers, tablefmt="plain", numalign="left"))
 
 print("List only STABLE and HIGH-LEVEL Consumer Groups")
 print(json.dumps(consumer_group.list(only_stable=True, only_high_level=True), indent=4), "\n\n")
