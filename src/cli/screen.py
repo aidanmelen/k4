@@ -4,6 +4,7 @@ from .color import curses_color, curses_color_pair
 
 import curses
 
+
 class Screen:
     def __init__(self, stdscr):
         if stdscr:
@@ -15,7 +16,7 @@ class Screen:
         # NOTE: requires curses.initscr()
         curses_color.start_color()
         curses_color.init_colors()
-        curses_color_pair.init_pairs(bg_color_name = "BLACK")
+        curses_color_pair.init_pairs(bg_color_name="BLACK")
 
         self.stdscr.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         self.stdscr.keypad(True)
@@ -38,7 +39,7 @@ class Screen:
             "_schemas_schemaregistry_confluent  1        ",
             "confluent.connect-configs          1        ",
             "confluent.connect-offsets          25       ",
-            "confluent.connect-status           5        "
+            "confluent.connect-status           5        ",
         ]
 
     @property
@@ -90,7 +91,7 @@ def main(stdscr) -> None:
                     "_schemas_schemaregistry_confluent  1        ",
                     "confluent.connect-configs          1        ",
                     "confluent.connect-offsets          25       ",
-                    "confluent.connect-status           5        "
+                    "confluent.connect-status           5        ",
                 ]
 
             screen.menu_window.handle_input(ch)
@@ -99,7 +100,7 @@ def main(stdscr) -> None:
             if ch == curses.KEY_RESIZE:
                 screen.resize()
 
-            elif ch == ord('q'):
+            elif ch == ord("q"):
                 break
 
     except KeyboardInterrupt:

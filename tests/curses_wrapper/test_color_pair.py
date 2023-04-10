@@ -27,7 +27,7 @@ def test_curses_color_pair_init_pair(curses_color):
 
 
 def test_curses_color_pair_next_pair_number(curses_color_pair):
-    assert  curses_color_pair.next_pair_number() == len(curses_color_pair._used_pair_numbers) + 1
+    assert curses_color_pair.next_pair_number() == len(curses_color_pair._used_pair_numbers) + 1
 
 
 def test_curses_color_pair_pair_name_to_number(curses_color_pair):
@@ -42,8 +42,7 @@ def test_curses_color_pair__setitem__(curses_color_pair):
 def test_curses_color_pair__getitem__(curses_color_pair):
     curses_color_pair["CYAN_ON_BLACK"] = ("CYAN", "BLACK")
     assert (
-        curses_color_pair["CYAN_ON_BLACK"]
-        == curses_color_pair.pair_name_to_number["CYAN_ON_BLACK"]
+        curses_color_pair["CYAN_ON_BLACK"] == curses_color_pair.pair_name_to_number["CYAN_ON_BLACK"]
     )
 
 
