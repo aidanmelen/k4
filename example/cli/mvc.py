@@ -3,6 +3,7 @@ from curses_wrapper.color import CursesColor, CursesColorPair
 import curses
 import curses.textpad
 import textwrap
+import itertools
 
 class BaseModel:
     def __init__(self):
@@ -197,42 +198,49 @@ class BaseView:
         max_x = self.max_x - 1
         
         # Display info
-        info = data['info']
-        for y, k in enumerate(list(info.keys())[:self.bottom_y]):
+        info = data.get('info', {})
+
+        max_k = max(len(str(k)) for k in info.keys())
+        max_v = max(len(str(v)) for v in info.values())
+
+        for y, k in enumerate(itertools.islice(info, self.bottom_y)):
             key = f"{k.capitalize()}: "
-            n = max(max_x - len(key) - len(self.LOGO[0]), 0)
+            n = max_x - max_v
             if n > 0:
                 self.top_win.addnstr(y, 1, key, max_x, curses_color_pair["GOLDENROD_ON_BLACK"])
-                self.top_win.addnstr(y, 1 + len(key), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
+            
+            n -= max_k
+            if n > 0:
+                self.top_win.addnstr(y, max_k + len(': ') + 1, str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
         
         # Display options
-        options = data['options']
-        for y, k in enumerate(list(options.keys())[:self.bottom_y]):
+        options = data.get('options', {})
+        for y, k in enumerate(itertools.islice(options, self.bottom_y)):
             
             # Format key
             key_str = f"<{k}> "
-            n = max_x - 40
+            n = max_x - 50
             if n > 0:
-                self.top_win.addnstr(y, 40, key_str, n, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
+                self.top_win.addnstr(y, 50, key_str, n, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
 
             # Format value
             n -= len(key_str)
             if n > 0:
-                self.top_win.addnstr(y, 40 + len(key_str), str(options[k]), n, curses_color_pair["GRAY_ON_BLACK"])
+                self.top_win.addnstr(y, 50 + len(key_str), str(options[k]), n, curses_color_pair["GRAY_ON_BLACK"])
         
         # Display controls
-        controls = data['controls']
-        for y, k in enumerate(list(controls.keys())[:self.bottom_y]):
+        controls = data.get('controls', {})
+        for y, k in enumerate(itertools.islice(controls, self.bottom_y)):
 
             # Format key
             key_str = f"<{k}> "
-            if self.max_x - 60 > 0:
-                self.top_win.addnstr(y, 60, key_str, max_x - 60, curses_color_pair["AZURE_ON_BLACK"] | curses.A_BOLD)
+            if self.max_x - 70 > 0:
+                self.top_win.addnstr(y, 70, key_str, max_x - 70, curses_color_pair["AZURE_ON_BLACK"] | curses.A_BOLD)
 
             # Format value
-            n = max_x - 60 - len(key_str)
+            n = max_x - 70 - len(key_str)
             if n > 0:
-                self.top_win.addnstr(y, 60 + len(key_str), str(controls[k]), n, curses_color_pair["GRAY_ON_BLACK"])
+                self.top_win.addnstr(y, 70 + len(key_str), str(controls[k]), n, curses_color_pair["GRAY_ON_BLACK"])
 
         # Display Logo
         for y, line in enumerate(self.LOGO[:self.bottom_y]):
@@ -244,9 +252,26 @@ class BaseView:
             return
 
         # Display banner
-        banner_line = f" {data['name']}s({len(data['contents'])}) "
-        x = max(self.max_x // 2 - len(banner_line) // 2, 0)
-        self.middle_win.addnstr(0, x, banner_line, self.max_x - 2)
+        banner_line = f" {data['name']}s({len(data['contents']) - 1}) "
+        banner_1 = f" {data['name']}"
+        banner_2 = "("
+        banner_3 = "all"
+        banner_4 = ")["
+        banner_5 = f"{len(data['contents']) - 1}"  # do not count header
+        banner_6 = f"] "
+        center_x = max(self.max_x // 2 - len(banner_line) // 2 - 2, 0)
+
+        # Colorize banner
+        if len(banner_line) < self.max_x - 6:
+            self.middle_win.addstr(0, center_x, banner_1, curses_color_pair["CYAN_ON_BLACK"] | curses.A_BOLD)
+            self.middle_win.addstr(banner_2, curses_color_pair["CYAN_ON_BLACK"])
+            self.middle_win.addstr(banner_3, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
+            self.middle_win.addstr(banner_4, curses_color_pair["CYAN_ON_BLACK"])
+            self.middle_win.addstr(banner_5, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
+            self.middle_win.addstr(banner_6, curses_color_pair["CYAN_ON_BLACK"])
+
+            # Ensure banner is drawn ontop of window box
+            self.middle_win.refresh()
 
         # Display contents
         for y, line in enumerate(data["contents"]):
