@@ -1,5 +1,5 @@
 from confluent_kafka.admin import AdminClient
-from . import screen
+from .controller import Controller
 
 import click
 import curses
@@ -47,4 +47,5 @@ def cli(bootstrap_servers, kafka_config, log_level):
     log_level = log_level
     # admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
 
-    curses.wrapper(screen.main)
+    controller = Controller()
+    controller.run()
