@@ -42,7 +42,7 @@ class ConsumerGroupModel(BaseModel):
     @property
     def data(self):
         return {
-            "name": "ConsumerGroups",
+            "name": "ConsumerGroup",
             "info": {
                 "context": None,
                 "cluster": None,
@@ -144,7 +144,7 @@ class BaseView:
         input_pad.edit(validate)
         cmd = input_pad.gather()
 
-        # Close cursor
+        # Hide cursor
         curses.curs_set(0)
         
         # Reset ESCAPE delay
@@ -235,7 +235,7 @@ class BaseView:
             return
 
         # Display banner
-        banner_line = f" {data['name'].capitalize()}s({len(data['contents'])}) "
+        banner_line = f" {data['name']}s({len(data['contents'])}) "
         x = max(self.max_x // 2 - len(banner_line) // 2, 0)
         self.middle_win.addnstr(0, x, banner_line, self.max_x - 2)
 
@@ -274,10 +274,10 @@ class Navigation:
         }
 
     def navigate(self, command):
-        if command in ["topics", "tops", "t"]:
+        if command in ("topics", "tops", "t"):
             self.current_focus = 'topics'
 
-        elif command in ["consumergroups", "groups", "grps", "g"]:
+        elif command in ("consumergroups", "groups", "grps", "g"):
             self.current_focus = 'consumergroups'
 
     def get_current_focus(self, window):
@@ -317,12 +317,12 @@ class Controller:
                     command = view.get_input(model_data)
                     self.navigation.navigate(command)
                     view, model = self.navigation.get_current_focus(self.screen.subwin(0, 0))
+                    
+                    if command in ('quit', 'q'):
+                        break
                 
                 elif ch == curses.KEY_RESIZE:
                     view.handle_resize()
-                    
-                elif ch == ord('q'):
-                    break
 
         except KeyboardInterrupt:
             pass
