@@ -24,7 +24,8 @@ class TopicModel(BaseModel):
                 "user": None
             },
             "options": {
-                "1": "internal",
+                "1": "Show Internal",
+                "10": "blarg",
             },
             "controls": {
                 "ctrl-d": "Delete",
@@ -52,8 +53,8 @@ class ConsumerGroupModel(BaseModel):
                 "user": None
             },
             "options": {
-                "1": "only_stable",
-                "2": "only_high_level",
+                "1": "only stable",
+                "2": "only high level",
             },
             "controls": {
                 "ctrl-d": "Delete",
@@ -199,49 +200,50 @@ class BaseView:
         
         # Display info
         info = data.get('info', {})
-
-        max_k = max(len(str(k)) for k in info.keys())
-        max_v = max(len(str(v)) for v in info.values())
-
+        max_k = max(len(str(k)) + 1 for k in info.keys())
+        max_v = max(len(str(v)) + 1 for v in info.values())
         for y, k in enumerate(itertools.islice(info, self.bottom_y)):
             key = f"{k.capitalize()}: "
-            n = max_x - max_v
+            n = max_x - max_k
             if n > 0:
-                self.top_win.addnstr(y, 1, key, max_x, curses_color_pair["GOLDENROD_ON_BLACK"])
-            
-            n -= max_k
+                self.top_win.addnstr(y, 1, key, max_k + len(": "), curses_color_pair["GOLDENROD_ON_BLACK"])
+
+            n = max_x - max_k - max_v
             if n > 0:
-                self.top_win.addnstr(y, max_k + len(': ') + 1, str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
+                self.top_win.addnstr(y, max_k + len(": "), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"])
         
         # Display options
         options = data.get('options', {})
+        max_k = max(len(str(k)) + 1 for k in options.keys())
         for y, k in enumerate(itertools.islice(options, self.bottom_y)):
             
             # Format key
             key_str = f"<{k}> "
-            n = max_x - 50
+            n = max_x - max_k - 50
             if n > 0:
                 self.top_win.addnstr(y, 50, key_str, n, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
 
             # Format value
-            n -= len(key_str)
+            n = max_x - max_k - max_v - 50
             if n > 0:
-                self.top_win.addnstr(y, 50 + len(key_str), str(options[k]), n, curses_color_pair["GRAY_ON_BLACK"])
+                self.top_win.addnstr(y, 50 + max_k + len("> "), str(options[k]), n, curses_color_pair["GRAY_ON_BLACK"])
         
         # Display controls
         controls = data.get('controls', {})
+        max_k = max(len(str(k)) + 1 for k in controls.keys())
         for y, k in enumerate(itertools.islice(controls, self.bottom_y)):
-
+            
             # Format key
             key_str = f"<{k}> "
-            if self.max_x - 70 > 0:
-                self.top_win.addnstr(y, 70, key_str, max_x - 70, curses_color_pair["AZURE_ON_BLACK"] | curses.A_BOLD)
+            n = max_x - max_k - 70
+            if n > 0:
+                self.top_win.addnstr(y, 70, key_str, n, curses_color_pair["AZURE_ON_BLACK"] | curses.A_BOLD)
 
             # Format value
-            n = max_x - 70 - len(key_str)
+            n = max_x - max_k - max_v - 70
             if n > 0:
-                self.top_win.addnstr(y, 70 + len(key_str), str(controls[k]), n, curses_color_pair["GRAY_ON_BLACK"])
-
+                self.top_win.addnstr(y, 70 + max_k + len("> "), str(controls[k]), n, curses_color_pair["GRAY_ON_BLACK"])
+        
         # Display Logo
         for y, line in enumerate(self.LOGO[:self.bottom_y]):
             x = max(self.max_x - len(self.LOGO[0]) - 1, 0)
