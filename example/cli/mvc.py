@@ -1,3 +1,5 @@
+from curses_wrapper.color import CursesColor, CursesColorPair
+
 import curses
 import curses.textpad
 import textwrap
@@ -80,6 +82,7 @@ class BaseView:
     def __init__(self, window):
         # Initialize and clear the main window
         self.window = window
+        self.window.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         self.handle_resize()
     
     def handle_resize(self):
@@ -99,16 +102,17 @@ class BaseView:
         # Create the top window
         if self.max_y > self.top_h + self.bottom_h:
             self.top_win = self.window.subwin(self.top_h, self.max_x, 0, 0)
-            self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
+            self.top_win.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         elif self.max_y > self.bottom_h:
             self.top_win = self.window.subwin(self.bottom_y, self.max_x, 0, 0)
-            self.top_win.bkgd(curses.color_pair(10) | curses.A_REVERSE)
+            self.top_win.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         else:
             self.top_win = None
         
         # Create the middle window
         if self.middle_h > 1:
             self.middle_win = self.window.subwin(self.middle_h, self.max_x, self.middle_y, 0)
+            self.middle_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
             self.middle_win.box()
         else:
             self.middle_win = None
@@ -157,7 +161,7 @@ class BaseView:
         self.input_h = 3
         self.max_y, self.max_x = self.window.getmaxyx()
         
-        # Update the middle window
+        # Shift the middle window downward to make room for the input window
         self.middle_h -= self.input_h
         if self.middle_win and self.middle_h > 1:
             self.middle_win.resize(self.middle_h, self.max_x)
@@ -170,65 +174,70 @@ class BaseView:
         result = None
         if self.max_y > self.top_h + self.input_h - 1:
             self.input_win = self.window.subwin(self.input_h, self.max_x, self.input_y, 0)
+            self.input_win.bkgd(curses_color_pair["AQUAMARINE_ON_BLACK"])
             self.input_win.box()
             self.input_win.addstr(1, 1, prompt)
             self.input_win.refresh()
             
             # Edit and gather user input
             textpad_window = curses.newwin(1, self.max_x - len(prompt) - 2, self.input_y + 1, len(prompt) + 1)
+            textpad_window.bkgd(curses_color_pair["PEACOCK_ON_BLACK"])
             result = self.textpad_edit(textpad_window)
-        else:
-            self.input_win = None
 
-        # Minimize input window
-        self.input_h = 0
+        # Clear input window
+        self.input_win.clear()
+        self.input_win = None
 
         return result
         
     def display_top_win(self, data):
-        if self.top_win:
-            max_x = self.max_x - 1
+        if not self.top_win or self.top_h < 0:
+            return
+
+        max_x = self.max_x - 1
+        
+        # Display info
+        info = data['info']
+        for y, k in enumerate(list(info.keys())[:self.bottom_y]):
+            key = f"{k.capitalize()}: "
+            n = max(max_x - len(key) - len(self.LOGO[0]), 0)
+            if n > 0:
+                self.top_win.addnstr(y, 1, key, max_x, curses_color_pair["GOLDENROD_ON_BLACK"])
+                self.top_win.addnstr(y, 1 + len(key), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
+        
+        # Display options
+        options = data['options']
+        for y, k in enumerate(list(options.keys())[:self.bottom_y]):
             
-            # Display info
-            info = data['info']
-            for y, k in enumerate(list(info.keys())[:self.bottom_y]):
-                key = f"{k.capitalize()}: "
+            # Format key
+            key_str = f"<{k}> "
+            n = max_x - 40
+            if n > 0:
+                self.top_win.addnstr(y, 40, key_str, n, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
 
-                self.top_win.addnstr(y, 1, key, max_x)
+            # Format value
+            n -= len(key_str)
+            if n > 0:
+                self.top_win.addnstr(y, 40 + len(key_str), str(options[k]), n, curses_color_pair["GRAY_ON_BLACK"])
+        
+        # Display controls
+        controls = data['controls']
+        for y, k in enumerate(list(controls.keys())[:self.bottom_y]):
 
-                n = max(max_x - len(key) - len(self.LOGO[0]), 0)
-                if n > 0:
-                    self.top_win.addnstr(y, 1 + len(key), str(info[k]), n, curses.A_BOLD)
-            
-            # Display options
-            options = data['options']
-            for y, k in enumerate(list(options.keys())[:self.bottom_y]):
-                key_str = f"<{k}> "
+            # Format key
+            key_str = f"<{k}> "
+            if self.max_x - 60 > 0:
+                self.top_win.addnstr(y, 60, key_str, max_x - 60, curses_color_pair["AZURE_ON_BLACK"] | curses.A_BOLD)
 
-                n = max_x - 40
-                if n > 0:
-                    self.top_win.addnstr(y, 40, key_str, n, curses.A_BOLD)
+            # Format value
+            n = max_x - 60 - len(key_str)
+            if n > 0:
+                self.top_win.addnstr(y, 60 + len(key_str), str(controls[k]), n, curses_color_pair["GRAY_ON_BLACK"])
 
-                n -= len(key_str)
-                if n > 0:
-                    self.top_win.addnstr(y, 40 + len(key_str), str(options[k]), n)
-            
-            # Display controls
-            controls = data['controls']
-            for y, k in enumerate(list(controls.keys())[:self.bottom_y]):
-                key_str = f"<{k}> "
-
-                if self.max_x - 60 > 0:
-                    self.top_win.addnstr(y, 60, key_str, max_x - 60, curses.A_BOLD)
-
-                n = max_x - 60 - len(key_str)
-                if n > 0:
-                    self.top_win.addnstr(y, 60 + len(key_str), str(controls[k]), n)
-
-            # Display Logo
-            for y, line in enumerate(self.LOGO[:self.bottom_y]):
-                x = max(self.max_x - len(self.LOGO[0]) - 1, 0)
-                self.top_win.addnstr(y, x, line, max_x, curses.A_BOLD)
+        # Display Logo
+        for y, line in enumerate(self.LOGO[:self.bottom_y]):
+            x = max(self.max_x - len(self.LOGO[0]) - 1, 0)
+            self.top_win.addnstr(y, x, line, max_x, curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD)
     
     def display_middle_win(self, data):
         if not self.middle_win:
@@ -247,7 +256,7 @@ class BaseView:
     
     def display_bottom_win(self, data):
         # Display footer
-        self.bottom_win.addnstr(0, 1, f" <{data['name'].lower()}> ", self.max_x - 2, curses.color_pair(10) | curses.A_REVERSE)
+        self.bottom_win.addnstr(0, 1, f" <{data['name'].lower()}> ", self.max_x - 2, curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_REVERSE)
 
     def display(self, data):
         self.display_top_win(data)
@@ -295,9 +304,13 @@ class Controller:
         curses.cbreak()
         curses.curs_set(0)
 
-        # Start colors
-        curses.start_color()
-        curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        # Start colors and init color pairs
+        global curses_color_pair
+        curses_color = CursesColor()
+        curses_color_pair = CursesColorPair(curses_color)
+        curses_color.start_color()
+        curses_color.init_colors()
+        curses_color_pair.init_pairs(bg_color_name="BLACK")
 
         self.navigation = Navigation()
 
