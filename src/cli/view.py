@@ -165,42 +165,42 @@ class BaseView:
                     y, max_k + len(": "), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"]
                 )
 
-        # Display options
-        options_x = 50
-        chunked_options = self.chunk_dict(data.get("options", {}))
-        for options in chunked_options:
-            max_k = max(len(str(k)) + 1 for k in options.keys())
-            max_v = max(len(str(v)) + 1 for v in options.values())
-            for y, k in enumerate(itertools.islice(options, self.bottom_y)):
+        # Display domains
+        domains_x = 50
+        chunked_domains = self.chunk_dict(data.get("domains", {}))
+        for domains in chunked_domains:
+            max_k = max(len(str(k)) + 1 for k in domains.keys())
+            max_v = max(len(str(v)) + 1 for v in domains.values())
+            for y, k in enumerate(itertools.islice(domains, self.bottom_y)):
 
                 # Format key
                 key_str = f"<{k}> "
-                n = max_x - max_k - options_x
+                n = max_x - max_k - domains_x
                 if n > 0:
                     self.top_win.addnstr(
                         y,
-                        options_x,
+                        domains_x,
                         key_str,
                         n,
                         curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD,
                     )
 
                 # Format value
-                n = max_x - max_k - max_v - options_x
+                n = max_x - max_k - max_v - domains_x
                 if n > 0:
                     self.top_win.addnstr(
                         y,
-                        options_x + max_k + len("> "),
-                        str(options[k]),
+                        domains_x + max_k + len("> "),
+                        str(domains[k]),
                         n,
                         curses_color_pair["GRAY_ON_BLACK"],
                     )
 
             # shift next column
-            options_x += max_k + len("<> ") + max_v + 1
+            domains_x += max_k + len("<> ") + max_v + 1
 
         # Display controls
-        controls_x = options_x
+        controls_x = domains_x
         chunked_controls = self.chunk_dict(data.get("controls", {}))
         for controls in chunked_controls:
             max_k = max(len(str(k)) + 1 for k in controls.keys())

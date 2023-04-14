@@ -1,5 +1,7 @@
+import traceback
+
 class K4Error(Exception):
-    """A k4 error class."""
+    """The k4 error class."""
 
     LOGO = [
         " ____      _____  ",

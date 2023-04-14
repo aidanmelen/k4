@@ -53,7 +53,11 @@ def cli(bootstrap_servers, kafka_config, log_level):
     err = controller.run()
 
     if err:
+        # Display k4 logo 
         click.echo(click.style("\n".join(err.LOGO), fg="red", bold=True))
         click.echo(click.style(str(err) + "\n", bold=True))
 
-        # raise err.error
+        # Then display the traceback
+        raise err.error
+        traceback.print_tb(err.error.__traceback__)
+        click.echo(err.traceback)

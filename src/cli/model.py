@@ -13,17 +13,17 @@ class TopicModel(BaseModel):
         return {
             "name": "Topic",
             "info": {"cluster": None, "user": None},
-            "options": {
+            "domains": {
                 "1": "domain1",
                 "2": "domain2",
                 "3": "domain3",
                 "4": "domain4",
                 "5": "domain5",
-                # "6": "domain6",
-                # "7": "domain7",
-                # "8": "domain8",
-                # "9": "domain9",
-                # "10": "domain10",
+                "6": "domain6",
+                "7": "domain7",
+                "8": "domain8",
+                "9": "domain9",
+                "10": "domain10",
             },
             "controls": {
                 "c": "Consume",
@@ -50,7 +50,7 @@ class ConsumerGroupModel(BaseModel):
         return {
             "name": "ConsumerGroup",
             "info": {"context": None, "cluster": None, "user": None},
-            "options": {"1": "domain1", "2": "domain2", "3": "domain3"},
+            "domains": {"1": "domain1", "2": "domain2", "3": "domain3"},
             "controls": {
                 "ctrl-d": "Delete",
                 "d": "Describe",
