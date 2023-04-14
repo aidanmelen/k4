@@ -1,8 +1,20 @@
 import os
 import subprocess
+from typing import Dict
 
 
-def open_editor(config, filepath=".k4_config.tmp"):
+def open_config(config: Dict[str, str], filepath: str = ".k4_config.tmp") -> Dict[str, str]:
+    """
+    Opens the configuration file in the system's terminal editor and returns the updated configuration.
+    If the user exits the editor without saving any changes, the original configuration is returned.
+
+    Args:
+        config (Dict[str, str]): The configuration dictionary to be opened in the editor.
+        filepath (str): The file path of the named temporary file to be created.
+
+    Returns:
+        Dict[str, str]: The updated configuration dictionary after the user has saved their changes.
+    """
     # write topic config to a named temporary file
     with open(filepath, "w") as f:
         for key, value in sorted(config.items()):

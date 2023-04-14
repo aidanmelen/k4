@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 from unittest.mock import patch
-from curses_wrapper import CursesWindow, CursesColor, CursesColorPair
+from curses_wrapper import CursesColor, CursesColorPair
 import curses
 import pytest
 
@@ -23,11 +23,6 @@ def mock_curses():
          patch("curses.color_content"), \
          patch("curses.newwin"):
         yield
-
-
-@pytest.fixture
-def curses_window(mock_curses):
-    return CursesWindow(5, 10, 2, 2)
 
 
 @pytest.fixture

@@ -6,6 +6,7 @@ class Topic(KafkaResource):
     def __init__(self, admin_client_config=None, timeout=10, log_level=None):
         """
         The Kafka Topic wrapper class.
+
         Args:
             admin_client_config (dict): The Kafka AdminClient configuration.
             timeout (int): The timeout for kafka operations.

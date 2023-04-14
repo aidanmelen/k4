@@ -1,1 +1,1 @@
-from .editor import open_editor
+from . import editor

@@ -8,7 +8,8 @@ admin_client_config = {"bootstrap.servers": "kafka:9092"}
 topic = Topic(admin_client_config, timeout=3)
 
 print("List all Topics")
-print(json.dumps(topic.list(), indent=4), "\n\n")
+topic_list = topic.list()
+print(json.dumps(topic_list, indent=4), "\n\n")
 
 print("Create Topic")
 topic_name = "test.topic"

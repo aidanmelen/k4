@@ -1,10 +1,12 @@
 from confluent_kafka.admin import AdminClient
 from .controller import Controller
+from .error import K4Error
 
 import click
 import curses
 import yaml
 import os
+import traceback
 
 
 @click.command()
@@ -48,4 +50,10 @@ def cli(bootstrap_servers, kafka_config, log_level):
     # admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
 
     controller = Controller()
-    controller.run()
+    err = controller.run()
+
+    if err:
+        click.echo(click.style("\n".join(err.LOGO), fg="red", bold=True))
+        click.echo(click.style(str(err) + "\n", bold=True))
+
+        # raise err.error
