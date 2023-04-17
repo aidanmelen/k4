@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import curses
 
 
@@ -6,7 +6,7 @@ class ScrollManager:
     UP = -1
     DOWN = 1
 
-    def init(self, window: curses.window, color_pair_id: int = 1) -> None:
+    def init(self, window: curses.window, color_pair_id: int = 1, start_line: int = 0) -> None:
         """
         Initialize the screen window
 
@@ -39,6 +39,10 @@ class ScrollManager:
         self.max_y, self.max_x = self.window.getmaxyx()
         self.y, self.x = self.window.getbegyx()
 
+        # Initialize scroll items
+        self.__items = []
+        self.current_item = {}
+
         # Maximum visible line count for window
         self.max_lines = self.max_y
 
@@ -46,10 +50,20 @@ class ScrollManager:
         self.top = 0
 
         # Available bottom line position for whole pages (as length of items)
-        self.bottom = 0
+        self.bottom = len(self.__items)
 
         # Current highlighted line number (as window cursor)
-        self.current = 0
+        self.current = start_line
+
+    @property
+    def items(self):
+        return self.__items
+
+    @items.setter
+    def items(self, items: List[Dict[str, str]]):
+        # Update scroll book-keeping given the items
+        self.bottom = len(self.__items)
+        self.__items = items
 
     def scroll(self, direction: int) -> None:
         """Scrolling the window when pressing up/down arrow keys"""
@@ -110,45 +124,32 @@ class ScrollManager:
         elif ch == curses.KEY_RIGHT:
             self.paging(self.DOWN)
 
-    def display(self, items: List[str] = [], header_color_pair_id: int = None) -> None:
-        """Display a scrollable list of items.
+    def select_text(self):
+        """Return the text from the current item."""
+        return str(self.current_item.get("text"))
 
-        Args:
-            items (list[str], optional): The items to display. Default is an empty list.
-            header_color_pair_id (int, optional): The ID of the curses color pair to use for the header. Default is None.
-
-        Returns:
-            None
-        """
+    def display(self, should_pad_right_with_spaces: bool = True) -> None:
+        """Display a scrollable list of items."""
+        # Erase the window to prevent streaking on scroll
         self.window.erase()
 
-        self.bottom = len(items)
-
+        # Ensure lines are written within window columns
         max_x = self.max_x - 1
 
-        if header_color_pair_id:
-            header = items[0]
+        for y, item in enumerate(self.__items[self.top : self.top + self.max_lines]):
 
-        for y, item in enumerate(items[self.top : self.top + self.max_lines]):
-            
-            # Ensure lines are written in window
-            if y < self.max_y:
+            text = item["text"]
+            color_pair_id = item.get("color_pair_id", self.color_pair_id)
 
-                # Highlight the current cursor header line
-                if header_color_pair_id:
-                    if item == header and self.current == 0:
-                        self.window.addnstr(
-                            y, 0, item, max_x, self.color_pair_id | curses.A_REVERSE
-                        )
-                    elif y == 0 and item == header:
-                        self.window.addnstr(y, 0, item, max_x, self.color_pair_id)
+            if should_pad_right_with_spaces:
+                spaces = " " * (max_x - len(item))
+                text += spaces
 
-                # Highlight the current cursor line
-                elif y == self.current:
-                    self.window.addnstr(
-                        y, 0, item, max_x, self.color_pair_id | curses.A_REVERSE
-                    )
-                elif self.max_y > 0:
-                    self.window.addnstr(y, 0, item, max_x, self.color_pair_id)
+            # Highlight the current cursor line
+            if y == self.current:
+                self.window.addnstr(y, 0, text, max_x, color_pair_id | curses.A_REVERSE)
+                self.current_item = item
+            elif self.max_y > 0:
+                self.window.addnstr(y, 0, text, max_x, color_pair_id)
 
         self.window.refresh()

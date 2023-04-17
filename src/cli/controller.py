@@ -51,6 +51,7 @@ class Navigation:
         elif command == "consumergroups" or command in self.aliases["consumergroups"]:
             self.current_focus = "consumergroups"
 
+
     def get_current_focus(self, window):
         view = self.focuses[self.current_focus]["view"](window)
         model = self.focuses[self.current_focus]["model"]()
@@ -88,7 +89,7 @@ class Controller:
 
                 # handle user command
                 if ch == ord(":"):
-                    command = view.get_input(model_data)
+                    command = view.get_command(model_data)
                     self.navigation.navigate(command)
                     view, model = self.navigation.get_current_focus(self.screen)
 
@@ -101,8 +102,8 @@ class Controller:
 
         except KeyboardInterrupt:
             pass
-        except curses.error as ce:
-            return K4Error("Curses! Something went wrong!", ce)
+        except Exception as e:
+            return K4Error("Curses! Something went wrong!", e)
         finally:
             self.cleanup()
 

@@ -42,7 +42,7 @@ class BaseView:
         self.middle_h = self.max_y - self.top_h - self.command_h - self.bottom_h
         self.middle_y = self.top_h + self.command_h
         self.middle_scroll_h = self.middle_h - 2
-        self.middle_scroll_w = self.max_x - 3 # 2 box and 1 left indent.
+        self.middle_scroll_w = self.max_x - 3  # 2 box and 1 left indent.
         self.middle_scroll_y = self.middle_y + 1
         self.middle_scroll_x = 2
         self.command_y = self.top_h
@@ -65,9 +65,11 @@ class BaseView:
 
         # Create the scroll contents derived window
         if self.middle_scroll_h > 0:
-            self.middle_scroll_win = self.middle_win.derwin(self.middle_scroll_h, self.middle_scroll_w, 1, 2)
+            self.middle_scroll_win = self.middle_win.derwin(
+                self.middle_scroll_h, self.middle_scroll_w, 1, 2
+            )
             self.middle_scroll_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
-            self.scroll_manager.init(self.middle_scroll_win)
+            self.scroll_manager.init(self.middle_scroll_win, start_line=1)
         else:
             self.middle_scroll_win = None
 
@@ -104,7 +106,11 @@ class BaseView:
             n = max_x - max_k
             if n > 0:
                 self.top_win.addnstr(
-                    y, 1, key, max_k + len(": "), curses_color_pair["GOLDENROD_ON_BLACK"]
+                    y,
+                    1,
+                    key,
+                    max_k + len(": "),
+                    curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD,
                 )
 
             # Format value
@@ -223,7 +229,11 @@ class BaseView:
 
     def display_middle_scroll_win(self, data):
         if self.middle_scroll_win:
-            self.scroll_manager.display(data["contents"])
+            data["contents"][0].update(
+                {"color_pair_id": curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD}
+            )
+            self.scroll_manager.items = data["contents"]
+            self.scroll_manager.display()
 
     def display_bottom_win(self, data):
         # Display footer
@@ -232,7 +242,7 @@ class BaseView:
             1,
             f" <{data['name'].lower()}> ",
             self.max_x - 2,
-            curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_REVERSE,
+            curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_REVERSE | curses.A_BOLD,
         )
 
     def display(self, data):
