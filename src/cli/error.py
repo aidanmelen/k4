@@ -1,5 +1,6 @@
 import traceback
 
+
 class K4Error(Exception):
     """The k4 error class."""
 

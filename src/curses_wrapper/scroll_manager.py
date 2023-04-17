@@ -1,7 +1,8 @@
 from typing import List
 import curses
 
-class ScrollManager():
+
+class ScrollManager:
     UP = -1
     DOWN = 1
 
@@ -25,7 +26,7 @@ class ScrollManager():
         |                                      |
         |                                      | <- page = 1 (0 and 1)
         └--------------------------------------┘
-        
+
         Attributes
             window: A full curses screen window
 
@@ -62,7 +63,11 @@ class ScrollManager():
             return
         # Down direction scroll overflow
         # next cursor position touch the max lines, but absolute position of max lines could not touch the bottom
-        if (direction == self.DOWN) and (next_line == self.max_lines) and (self.top + self.max_lines < self.bottom):
+        if (
+            (direction == self.DOWN)
+            and (next_line == self.max_lines)
+            and (self.top + self.max_lines < self.bottom)
+        ):
             self.top += direction
             return
         # Scroll up
@@ -72,7 +77,11 @@ class ScrollManager():
             return
         # Scroll down
         # next cursor position is above max lines, and absolute position of next cursor could not touch the bottom
-        if (direction == self.DOWN) and (next_line < self.max_lines) and (self.top + next_line < self.bottom):
+        if (
+            (direction == self.DOWN)
+            and (next_line < self.max_lines)
+            and (self.top + next_line < self.bottom)
+        ):
             self.current = next_line
             return
 
@@ -84,11 +93,11 @@ class ScrollManager():
 
         # Page up
         # top position can not be negative, so if top position is going to be negative, we should set it as 0
-        if (direction == self.UP):
+        if direction == self.UP:
             self.top = max(0, self.top - self.max_lines)
         # Page down
         # top position should not be greater than the number of items, so we must restrict it
-        elif (direction == self.DOWN):
+        elif direction == self.DOWN:
             self.top += min(self.max_lines, self.bottom - self.top - 1)
 
     def handle_input(self, ch: int) -> None:
@@ -99,7 +108,7 @@ class ScrollManager():
         elif ch == curses.KEY_LEFT:
             self.paging(self.UP)
         elif ch == curses.KEY_RIGHT:
-            self.paging(self.DOWN)        
+            self.paging(self.DOWN)
 
     def display(self, items: List[str] = [], header_color_pair_id: int = None) -> None:
         """Display a scrollable list of items.
@@ -118,8 +127,8 @@ class ScrollManager():
         if header_color_pair_id:
             header = items[0]
 
-        for y, item in enumerate(items[self.top:self.top + self.max_lines]):
-            
+        for y, item in enumerate(items[self.top : self.top + self.max_lines]):
+
             if y == self.max_y - 1:
                 break
 
@@ -127,15 +136,18 @@ class ScrollManager():
                 # Highlight the current cursor header line
                 if header_color_pair_id:
                     if item == header and self.current == 0:
-                        self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE)
+                        self.window.addnstr(
+                            y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE
+                        )
                     elif y == 0 and item == header:
                         self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id)
-                
+
                 # Highlight the current cursor line
                 elif y == self.current:
-                    self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE)
+                    self.window.addnstr(
+                        y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE
+                    )
                 elif self.max_y > 0:
                     self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id)
-        
+
         self.window.refresh()
-    

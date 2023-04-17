@@ -53,7 +53,7 @@ def cli(bootstrap_servers, kafka_config, log_level):
     err = controller.run()
 
     if err:
-        # Display k4 logo 
+        # Display k4 logo
         click.echo(click.style("\n".join(err.LOGO), fg="red", bold=True))
         click.echo(click.style(str(err) + "\n", bold=True))
 

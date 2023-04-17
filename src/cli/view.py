@@ -111,7 +111,11 @@ class BaseView:
             n = max_x - max_k - max_v
             if n > 0:
                 self.top_win.addnstr(
-                    y, max_k + len(": "), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD
+                    y,
+                    max_k + len(": "),
+                    str(info[k]),
+                    n,
+                    curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD,
                 )
 
         # Display domains

@@ -17,17 +17,30 @@ class Navigation:
             "consumergroups": {
                 "view": ConsumerGroupView,
                 "model": ConsumerGroupModel,
-            }
+            },
         }
 
         self.aliases = {
             "brokers": ("broker", "bros", "brkrs", "b"),
             "topics": ("topic", "tops", "t"),
-            "consumergroups":  ("consumers", "consumer", "cons", "c", "groups", "group", "grps", "g", "subscribers", "subscriber", "subs", "s"),
+            "consumergroups": (
+                "consumers",
+                "consumer",
+                "cons",
+                "c",
+                "groups",
+                "group",
+                "grps",
+                "g",
+                "subscribers",
+                "subscriber",
+                "subs",
+                "s",
+            ),
             "aliases": ("alias", "a"),
             "quit": ("Q", "q"),
         }
-    
+
     def navigate(self, command):
         if command == "brokers" or command in self.aliases["brokers"]:
             self.current_focus = "brokers"
