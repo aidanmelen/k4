@@ -22,7 +22,7 @@ def main(stdscr):
     scroll_win = box_win.derwin(h - 2 , w - 4, 1, 2)
     scroll_manager.init(scroll_win)
 
-    items = [f'{num + 1}. Item' for num in range(1000)]
+    items = [f'{num + 1}. Item' for num in range(100)]
 
     while True:
         scroll_manager.display(items)

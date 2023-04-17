@@ -124,30 +124,31 @@ class ScrollManager:
 
         self.bottom = len(items)
 
+        max_x = self.max_x - 1
+
         if header_color_pair_id:
             header = items[0]
 
         for y, item in enumerate(items[self.top : self.top + self.max_lines]):
-
-            if y == self.max_y - 1:
-                break
-
+            
+            # Ensure lines are written in window
             if y < self.max_y:
+
                 # Highlight the current cursor header line
                 if header_color_pair_id:
                     if item == header and self.current == 0:
                         self.window.addnstr(
-                            y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE
+                            y, 0, item, max_x, self.color_pair_id | curses.A_REVERSE
                         )
                     elif y == 0 and item == header:
-                        self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id)
+                        self.window.addnstr(y, 0, item, max_x, self.color_pair_id)
 
                 # Highlight the current cursor line
                 elif y == self.current:
                     self.window.addnstr(
-                        y, 0, item, self.max_x, self.color_pair_id | curses.A_REVERSE
+                        y, 0, item, max_x, self.color_pair_id | curses.A_REVERSE
                     )
                 elif self.max_y > 0:
-                    self.window.addnstr(y, 0, item, self.max_x, self.color_pair_id)
+                    self.window.addnstr(y, 0, item, max_x, self.color_pair_id)
 
         self.window.refresh()

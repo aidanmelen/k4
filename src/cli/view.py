@@ -41,10 +41,10 @@ class BaseView:
         self.bottom_y = self.max_y - self.bottom_h
         self.middle_h = self.max_y - self.top_h - self.command_h - self.bottom_h
         self.middle_y = self.top_h + self.command_h
-        self.contents_h = self.middle_h - 2
-        self.contents_w = self.max_x - 4
-        self.contents_y = self.middle_y + 1
-        self.contents_x = 2
+        self.middle_scroll_h = self.middle_h - 2
+        self.middle_scroll_w = self.max_x - 3 # 2 box and 1 left indent.
+        self.middle_scroll_y = self.middle_y + 1
+        self.middle_scroll_x = 2
         self.command_y = self.top_h
         self.command_win = None
 
@@ -64,12 +64,12 @@ class BaseView:
             self.middle_win = None
 
         # Create the scroll contents derived window
-        if self.contents_h > 0:
-            self.contents_win = self.middle_win.derwin(self.contents_h, self.contents_w, 1, 2)
-            self.contents_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
-            self.scroll_manager.init(self.contents_win)
+        if self.middle_scroll_h > 0:
+            self.middle_scroll_win = self.middle_win.derwin(self.middle_scroll_h, self.middle_scroll_w, 1, 2)
+            self.middle_scroll_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
+            self.scroll_manager.init(self.middle_scroll_win)
         else:
-            self.contents_win = None
+            self.middle_scroll_win = None
 
         # Create the bottom window
         self.bottom_win = self.window.subwin(1, self.max_x, self.bottom_y, 0)
@@ -221,8 +221,8 @@ class BaseView:
             # Ensure banner is drawn above of window box
             self.middle_win.refresh()
 
-    def display_content_win(self, data):
-        if self.contents_win:
+    def display_middle_scroll_win(self, data):
+        if self.middle_scroll_win:
             self.scroll_manager.display(data["contents"])
 
     def display_bottom_win(self, data):
@@ -238,7 +238,7 @@ class BaseView:
     def display(self, data):
         self.display_top_win(data)
         self.display_middle_win(data)
-        self.display_content_win(data)
+        self.display_middle_scroll_win(data)
         self.display_bottom_win(data)
 
     def get_ch(self):
