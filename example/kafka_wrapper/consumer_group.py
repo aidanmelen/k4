@@ -1,6 +1,7 @@
 from kafka_wrapper.consumer_group import ConsumerGroup
 from tabulate import tabulate
 import json
+import textwrap
 
 
 admin_client_config = {"bootstrap.servers": "kafka:9092"}
@@ -33,28 +34,28 @@ for group, metadata in consumer_group.describe().items():
                     a["current_offset"],
                     a["log_end_offset"],
                     a["lag"],
-                    m["id"],
+                    textwrap.shorten(m["id"], width=20),
                     m["host"],
-                    m["client_id"],
+                    textwrap.shorten(m["client_id"], width=20),
                 ]
             )
 
 print("Tabulate List all Consumer Groups")
 print(tabulate(group_rows, headers=headers, tablefmt="plain", numalign="left"))
 
-print("List only STABLE and HIGH-LEVEL Consumer Groups")
-print(json.dumps(consumer_group.list(only_stable=True, only_high_level=True), indent=4), "\n\n")
+# print("List only STABLE and HIGH-LEVEL Consumer Groups")
+# print(json.dumps(consumer_group.list(only_stable=True, only_high_level=True), indent=4), "\n\n")
 
-print("Describe all Consumer Groups")
-print(json.dumps(consumer_group.describe(), indent=4), "\n\n")
+# print("Describe all Consumer Groups")
+# print(json.dumps(consumer_group.describe(), indent=4), "\n\n")
 
-print("Describe all Consumer Groups without including offset lag")
-print(json.dumps(consumer_group.describe(include_offset_lag=False), indent=4), "\n\n")
+# print("Describe all Consumer Groups without including offset lag")
+# print(json.dumps(consumer_group.describe(include_offset_lag=False), indent=4), "\n\n")
 
-print("Describe one or many Consumer Groups")
-print(json.dumps(consumer_group.describe(group_ids=["_confluent-controlcenter-7-3-0-0-command"]), indent=4), "\n\n")
+# print("Describe one or many Consumer Groups")
+# print(json.dumps(consumer_group.describe(group_ids=["_confluent-controlcenter-7-3-0-0-command"]), indent=4), "\n\n")
 
-print("Set admin_client and timeout")
-from confluent_kafka.admin import AdminClient
-consumer_group.admin_client = AdminClient({"bootstrap.servers": "kafka:9092", "socket.timeout.ms": 10})
-consumer_group.timeout = 3
+# print("Set admin_client and timeout")
+# from confluent_kafka.admin import AdminClient
+# consumer_group.admin_client = AdminClient({"bootstrap.servers": "kafka:9092", "socket.timeout.ms": 10})
+# consumer_group.timeout = 3

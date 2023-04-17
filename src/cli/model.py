@@ -12,7 +12,7 @@ class TopicModel(BaseModel):
     def data(self):
         return {
             "name": "Topic",
-            "info": {"cluster": None, "user": None},
+            "info": {"context": None, "cluster": None, "user": None},
             "domains": {
                 "1": "domain1",
                 "2": "domain2",

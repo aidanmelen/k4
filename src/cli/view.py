@@ -1,5 +1,5 @@
 from .color import curses_color_pair
-from curses_wrapper import textbox
+from curses_wrapper import ScrollManager, textbox
 
 import curses
 import curses.textpad
@@ -24,6 +24,10 @@ class BaseView:
         # Initialize and clear the main window
         self.window = window
         self.window.bkgd(curses_color_pair["WHITE_ON_BLACK"])
+
+        # Initialize scroll manager
+        self.scroll_manager = ScrollManager()
+
         self.handle_resize()
 
     def handle_resize(self):
@@ -31,29 +35,22 @@ class BaseView:
 
         # Set window height and y-position book-keeping
         self.max_y, self.max_x = self.window.getmaxyx()
-        self.top_h = len(self.LOGO)
-        self.input_h = 0
+        self.top_h = min(len(self.LOGO), self.max_y)
+        self.command_h = 0
         self.bottom_h = 2
         self.bottom_y = self.max_y - self.bottom_h
-        self.middle_h = self.max_y - self.top_h - self.input_h - self.bottom_h
-        self.middle_y = self.top_h + self.input_h
+        self.middle_h = self.max_y - self.top_h - self.command_h - self.bottom_h
+        self.middle_y = self.top_h + self.command_h
         self.contents_h = self.middle_h - 2
         self.contents_w = self.max_x - 4
-        self.contents_y = 1
-        self.input_y = self.top_h
-        self.input_win = None
-
-        # Update content scroll book-keeping
-        self.scroll_top = self.middle_y
-        self.scroll_bottom = self.middle_y + self.middle_h
-        self.scroll_current = 1  # line 0 should be the tabulated headers
+        self.contents_y = self.middle_y + 1
+        self.contents_x = 2
+        self.command_y = self.top_h
+        self.command_win = None
 
         # Create the top window
-        if self.max_y > self.top_h + self.bottom_h:
+        if self.max_y > 0:
             self.top_win = self.window.subwin(self.top_h, self.max_x, 0, 0)
-            self.top_win.bkgd(curses_color_pair["WHITE_ON_BLACK"])
-        elif self.max_y > self.bottom_h:
-            self.top_win = self.window.subwin(self.bottom_y, self.max_x, 0, 0)
             self.top_win.bkgd(curses_color_pair["WHITE_ON_BLACK"])
         else:
             self.top_win = None
@@ -66,64 +63,16 @@ class BaseView:
         else:
             self.middle_win = None
 
-        # Content scroll
-        # if self.contents_h > 1:
-        # self.contents_win = self.middle_win.subwin(self.contents_h, self.contents_w, self.contents_y, 2)
-        # self.contents_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
-        # else:
-        #     self.contents_win = None
+        # Create the scroll contents derived window
+        if self.contents_h > 0:
+            self.contents_win = self.middle_win.derwin(self.contents_h, self.contents_w, 1, 2)
+            self.contents_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
+            self.scroll_manager.init(self.contents_win)
+        else:
+            self.contents_win = None
 
         # Create the bottom window
         self.bottom_win = self.window.subwin(1, self.max_x, self.bottom_y, 0)
-
-    def scroll(self, direction):
-        """Scrolling the window when pressing up/down arrow keys"""
-        # next cursor p.ition after scrolling
-        next_line = self.scroll_current + direction
-
-        # Up direction scroll overflow
-        # current cursor p.ition is 0, but top p.ition is greater than 0
-        if (direction == self.UP) and (self.scroll_top > 0 and self.scroll_current == 0):
-            self.scroll_top += direction
-            return
-        # Down direction scroll overflow
-        # next cursor p.ition touch the max lines, but absolute p.ition of max lines could not touch the bottom
-        if (
-            (direction == self.DOWN)
-            and (next_line == self.contents_h)
-            and (self.scroll_top + self.contents_h < self.scroll_bottom)
-        ):
-            self.scroll_top += direction
-            return
-        # Scroll up
-        # current cursor p.ition or top p.ition is greater than 0
-        if (direction == self.UP) and (self.scroll_top > 0 or self.scroll_current > 0):
-            self.scroll_current = next_line
-            return
-        # Scroll down
-        # next cursor p.ition is above max lines, and absolute p.ition of next cursor could not touch the bottom
-        if (
-            (direction == self.DOWN)
-            and (next_line < self.contents_h)
-            and (self.scroll_top + next_line < self.scroll_bottom)
-        ):
-            self.scroll_current = next_line
-            return
-
-    def paging(self, direction):
-        """Paging the window when pressing left/right arrow keys"""
-        # The last page may have fewer items than max lines,
-        # so we should adjust the current cursor p.ition as maximum item count on last page
-        self.scroll_current = min(self.scroll_current, self.scroll_bottom - self.scroll_top - 1)
-
-        # Page up
-        # top p.ition can not be negative, so if top p.ition is going to be negative, we should set it as 0
-        if direction == self.UP:
-            self.scroll_top = max(0, self.scroll_top - self.contents_h)
-        # Page down
-        # top p.ition should not be greater than the number of items, so we must restrict it
-        elif direction == self.DOWN:
-            self.scroll_top += min(self.contents_h, self.scroll_bottom - self.scroll_top - 1)
 
     def chunk_dict(self, d, chunk_size=6):
         """Split a dictionary into a list of dictionaries, with each sub-dictionary containing at most chunk_size key-value pairs."""
@@ -162,7 +111,7 @@ class BaseView:
             n = max_x - max_k - max_v
             if n > 0:
                 self.top_win.addnstr(
-                    y, max_k + len(": "), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"]
+                    y, max_k + len(": "), str(info[k]), n, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD
                 )
 
         # Display domains
@@ -269,17 +218,8 @@ class BaseView:
             self.middle_win.refresh()
 
     def display_content_win(self, data):
-        # Display contents
-        for y, line in enumerate(data["contents"]):
-            if y < self.middle_h - 2:
-                max_x_with_box = self.max_x - 4
-                self.middle_win.addnstr(y + 1, 2, line, max_x_with_box)
-
-                # # Highlight the current cursor headers line
-                # if text == headers and self.current == 0:
-                #     self.middle_win.addnstr(y + 1, 2, line, max_x_with_box, curses_color_pair["SKY_ON_BLACK"] | curses.A_REVERSE)
-                # elif y + 1 == 0 and item == headers:
-                #     self.middle_win.addnstr(y + 1, 2, line, max_x_with_box, curses_color_pair["SKY_ON_BLACK"])
+        if self.contents_win:
+            self.scroll_manager.display(data["contents"])
 
     def display_bottom_win(self, data):
         # Display footer
@@ -293,47 +233,49 @@ class BaseView:
 
     def display(self, data):
         self.display_top_win(data)
-        self.display_content_win(data)
         self.display_middle_win(data)
+        self.display_content_win(data)
         self.display_bottom_win(data)
 
     def get_ch(self):
-        return self.window.getch()
+        ch = self.window.getch()
+        self.scroll_manager.handle_input(ch)
+        return ch
 
-    def get_input(self, data, prompt=" > "):
-        # Set input window height
-        self.input_h = 3
+    def get_command(self, data, prompt=" > "):
+        # Set command window height
+        self.command_h = 3
         self.max_y, self.max_x = self.window.getmaxyx()
 
-        # Shift the middle window downward to make room for the input window
-        self.middle_h -= self.input_h
+        # Shift the middle window downward to make room for the command window
+        self.middle_h -= self.command_h
         if self.middle_win and self.middle_h > 1:
             # Content box/banner
             self.middle_win.resize(self.middle_h, self.max_x)
-            self.middle_win.mvwin(self.input_y + self.input_h, 0)
+            self.middle_win.mvwin(self.command_y + self.command_h, 0)
             self.middle_win.box()
             self.middle_win.refresh()
             self.display_middle_win(data)
 
-        # Create the input window
+        # Create the command window
         result = None
-        if self.max_y > self.top_h + self.input_h - 1:
-            self.input_win = self.window.subwin(self.input_h, self.max_x, self.input_y, 0)
-            self.input_win.bkgd(curses_color_pair["AQUAMARINE_ON_BLACK"])
-            self.input_win.box()
-            self.input_win.addstr(1, 1, prompt)
-            self.input_win.refresh()
+        if self.max_y > self.top_h + self.command_h - 1:
+            self.command_win = self.window.subwin(self.command_h, self.max_x, self.command_y, 0)
+            self.command_win.bkgd(curses_color_pair["AQUAMARINE_ON_BLACK"])
+            self.command_win.box()
+            self.command_win.addstr(1, 1, prompt)
+            self.command_win.refresh()
 
-            # Edit and gather user input
+            # Edit and gather user command
             textbox_win = curses.newwin(
-                1, self.max_x - len(prompt) - 2, self.input_y + 1, len(prompt) + 1
+                1, self.max_x - len(prompt) - 2, self.command_y + 1, len(prompt) + 1
             )
             textbox_win.bkgd(curses_color_pair["PEACOCK_ON_BLACK"])
             result = textbox.edit(textbox_win)
 
-        # Clear input window
-        self.input_win.clear()
-        self.input_win = None
+        # Clear command window
+        self.command_win.clear()
+        self.command_win = None
 
         return result
 

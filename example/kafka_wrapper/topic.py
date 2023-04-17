@@ -1,5 +1,5 @@
 from kafka_wrapper.topic import Topic
-from k4.editor import open_editor
+from cli.editor import open_config
 import json
 
 
@@ -28,7 +28,7 @@ print(json.dumps(topic_configs, indent=4, sort_keys=True), "\n\n")
 
 print("Alter Topic")
 topic_config = {k:v for k,v in topic_configs[topic_name].items() if v != "-"}
-new_config = open_editor(topic_config)
+new_config = open_config(topic_config)
 print(json.dumps(topic.alter(topic_name, config=new_config), indent=4, sort_keys=True), "\n\n")
 
 # print("And verify topic config alteration")

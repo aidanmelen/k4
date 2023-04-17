@@ -9,21 +9,38 @@ import curses
 class Navigation:
     def __init__(self):
         self.current_focus = "topics"
-        self.focus = {
-            "topics": (TopicView, TopicModel),
-            "consumergroups": (ConsumerGroupView, ConsumerGroupModel),
+        self.focuses = {
+            "topics": {
+                "view": TopicView,
+                "model": TopicModel,
+            },
+            "consumergroups": {
+                "view": ConsumerGroupView,
+                "model": ConsumerGroupModel,
+            }
         }
 
+        self.aliases = {
+            "brokers": ("broker", "bros", "brkrs", "b"),
+            "topics": ("topic", "tops", "t"),
+            "consumergroups":  ("consumers", "consumer", "cons", "c", "groups", "group", "grps", "g", "subscribers", "subscriber", "subs", "s"),
+            "aliases": ("alias", "a"),
+            "quit": ("Q", "q"),
+        }
+    
     def navigate(self, command):
-        if command in ("topics", "tops", "t"):
+        if command == "brokers" or command in self.aliases["brokers"]:
+            self.current_focus = "brokers"
+
+        elif command == "topics" or command in self.aliases["topics"]:
             self.current_focus = "topics"
 
-        elif command in ("consumergroups", "groups", "grps", "g"):
+        elif command == "consumergroups" or command in self.aliases["consumergroups"]:
             self.current_focus = "consumergroups"
 
     def get_current_focus(self, window):
-        view = self.focus[self.current_focus][0](window)
-        model = self.focus[self.current_focus][1]()
+        view = self.focuses[self.current_focus]["view"](window)
+        model = self.focuses[self.current_focus]["model"]()
         return view, model
 
 
@@ -46,7 +63,7 @@ class Controller:
 
     def run(self):
         try:
-            view, model = self.navigation.get_current_focus(self.screen.subwin(0, 0))
+            view, model = self.navigation.get_current_focus(self.screen)
 
             while True:
                 model_data = model.data
@@ -56,17 +73,16 @@ class Controller:
                 # handle user input
                 ch = view.get_ch()
 
-                if ch == ord("b"):
-                    self.screen.addstr(100000, 10000, "break")
-
+                # handle user command
                 if ch == ord(":"):
                     command = view.get_input(model_data)
                     self.navigation.navigate(command)
-                    view, model = self.navigation.get_current_focus(self.screen.subwin(0, 0))
+                    view, model = self.navigation.get_current_focus(self.screen)
 
-                    if command in ("quit", "q"):
+                    if command == "quit" or command in self.navigation.aliases["quit"]:
                         break
 
+                # handle screen resize
                 elif ch == curses.KEY_RESIZE:
                     view.handle_resize()
 
@@ -79,7 +95,4 @@ class Controller:
 
     def cleanup(self):
         self.screen.clear()
-        curses.nocbreak()
-        self.screen.keypad(True)
-        curses.echo()
         curses.endwin()
