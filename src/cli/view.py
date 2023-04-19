@@ -1,5 +1,6 @@
 from .color import curses_color_pair
 from curses_wrapper import ScrollManager, textbox
+from .timer import Timer
 
 import curses
 import curses.textpad
@@ -16,19 +17,19 @@ class BaseView:
         "       \\/    |__|",
     ]
 
-    # Scroll constants
-    UP = -1
-    DOWN = 1
-
     def __init__(self, window):
         # Initialize and clear the main window
         self.window = window
         self.window.bkgd(curses_color_pair["WHITE_ON_BLACK"])
 
+        # Timer used to refresh data
+        self.timer = Timer()
+
         # Initialize scroll manager
         self.scroll_manager = ScrollManager()
 
         self.handle_resize()
+
 
     def handle_resize(self):
         self.window.clear()
@@ -42,7 +43,7 @@ class BaseView:
         self.middle_h = self.max_y - self.top_h - self.command_h - self.bottom_h
         self.middle_y = self.top_h + self.command_h
         self.middle_scroll_h = self.middle_h - 2
-        self.middle_scroll_w = self.max_x - 3  # 2 box and 1 left indent.
+        self.middle_scroll_w = self.max_x - 3 # 2 box and 1 left indent.
         self.middle_scroll_y = self.middle_y + 1
         self.middle_scroll_x = 2
         self.command_y = self.top_h
@@ -65,11 +66,9 @@ class BaseView:
 
         # Create the scroll contents derived window
         if self.middle_scroll_h > 0:
-            self.middle_scroll_win = self.middle_win.derwin(
-                self.middle_scroll_h, self.middle_scroll_w, 1, 2
-            )
+            self.middle_scroll_win = self.middle_win.derwin(self.middle_scroll_h, self.middle_scroll_w, 1, 2)
             self.middle_scroll_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
-            self.scroll_manager.init(self.middle_scroll_win, start_line=1)
+            self.scroll_manager.init(self.middle_scroll_win, start_line = 1)
         else:
             self.middle_scroll_win = None
 
@@ -89,14 +88,14 @@ class BaseView:
             chunks.append(chunk)
         return chunks
 
-    def display_top_win(self, data):
+    def display_top_win(self, model):
         if not self.top_win or self.top_h < 0:
             return
 
         max_x = self.max_x - 1
 
         # Display info
-        info = data.get("info", {})
+        info = model.info
         max_k = max(len(str(k)) + 1 for k in info.keys())
         max_v = max(len(str(v)) + 1 for v in info.values())
         for y, k in enumerate(itertools.islice(info, self.bottom_y)):
@@ -106,11 +105,7 @@ class BaseView:
             n = max_x - max_k
             if n > 0:
                 self.top_win.addnstr(
-                    y,
-                    1,
-                    key,
-                    max_k + len(": "),
-                    curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD,
+                    y, 1, key, max_k + len(": "), curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD
                 )
 
             # Format value
@@ -124,43 +119,43 @@ class BaseView:
                     curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD,
                 )
 
-        # Display domains
-        domains_x = 50
-        chunked_domains = self.chunk_dict(data.get("domains", {}))
-        for domains in chunked_domains:
-            max_k = max(len(str(k)) + 1 for k in domains.keys())
-            max_v = max(len(str(v)) + 1 for v in domains.values())
-            for y, k in enumerate(itertools.islice(domains, self.bottom_y)):
+        # Display namespaces
+        namespaces_x = 50
+        chunked_namespaces = self.chunk_dict(model.namespaces)
+        for namespaces in chunked_namespaces:
+            max_k = max(len(str(k)) + 1 for k in namespaces.keys())
+            max_v = max(len(str(v)) + 1 for v in namespaces.values())
+            for y, k in enumerate(itertools.islice(namespaces, self.bottom_y)):
 
                 # Format key
                 key_str = f"<{k}> "
-                n = max_x - max_k - domains_x
+                n = max_x - max_k - namespaces_x
                 if n > 0:
                     self.top_win.addnstr(
                         y,
-                        domains_x,
+                        namespaces_x,
                         key_str,
                         n,
                         curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD,
                     )
 
                 # Format value
-                n = max_x - max_k - max_v - domains_x
+                n = max_x - max_k - max_v - namespaces_x
                 if n > 0:
                     self.top_win.addnstr(
                         y,
-                        domains_x + max_k + len("> "),
-                        str(domains[k]),
+                        namespaces_x + max_k + len("> "),
+                        str(namespaces[k]),
                         n,
                         curses_color_pair["GRAY_ON_BLACK"],
                     )
 
             # shift next column
-            domains_x += max_k + len("<> ") + max_v + 1
+            namespaces_x += max_k + len("<> ") + max_v + 1
 
         # Display controls
-        controls_x = domains_x
-        chunked_controls = self.chunk_dict(data.get("controls", {}))
+        controls_x = namespaces_x
+        chunked_controls = self.chunk_dict(model.controls)
         for controls in chunked_controls:
             max_k = max(len(str(k)) + 1 for k in controls.keys())
             max_v = max(len(str(v)) + 1 for v in controls.values())
@@ -199,17 +194,17 @@ class BaseView:
                 y, x, line, max_x, curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD
             )
 
-    def display_middle_win(self, data):
+    def display_middle_win(self, model):
         if not self.middle_win:
             return
 
         # Display banner
-        banner_line = f" {data['name']}s({len(data['contents']) - 1}) "
-        banner_1 = f" {data['name']}"
+        banner_line = f" {model.name}s({len(model.contents) - 1}) "
+        banner_1 = f" {model.name}"
         banner_2 = "("
         banner_3 = "all"
         banner_4 = ")["
-        banner_5 = f"{len(data['contents']) - 1}"  # do not count header
+        banner_5 = f"{len(model.contents) - 1}"  # do not count header
         banner_6 = f"] "
         center_x = max(self.max_x // 2 - len(banner_line) // 2 - 2, 0)
 
@@ -227,29 +222,33 @@ class BaseView:
             # Ensure banner is drawn above of window box
             self.middle_win.refresh()
 
-    def display_middle_scroll_win(self, data):
+    def display_middle_scroll_win(self, model):
         if self.middle_scroll_win:
-            data["contents"][0].update(
-                {"color_pair_id": curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD}
-            )
-            self.scroll_manager.items = data["contents"]
+            scroll_manager_items = [{"line": line} for line in model.contents]
+
+            # Colorize lines
+            scroll_manager_items[0].update({"color_pair_id": curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD})
+
+            self.scroll_manager.set_items(scroll_manager_items)
             self.scroll_manager.display()
 
-    def display_bottom_win(self, data):
+    def display_bottom_win(self, model):
         # Display footer
         self.bottom_win.addnstr(
             0,
             1,
-            f" <{data['name'].lower()}> ",
+            f" <{model.name.lower()}> ",
             self.max_x - 2,
             curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_REVERSE | curses.A_BOLD,
         )
 
-    def display(self, data):
-        self.display_top_win(data)
-        self.display_middle_win(data)
-        self.display_middle_scroll_win(data)
-        self.display_bottom_win(data)
+    def display(self, model):
+        model.timer.lap()
+
+        self.display_top_win(model)
+        self.display_middle_win(model)
+        self.display_middle_scroll_win(model)
+        self.display_bottom_win(model)
 
     def get_ch(self):
         ch = self.window.getch()

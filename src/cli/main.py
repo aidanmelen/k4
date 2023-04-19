@@ -47,10 +47,10 @@ def cli(bootstrap_servers, kafka_config, log_level):
     """A command-line client for Kafka."""
 
     log_level = log_level
-    # admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
+    kafka_admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
 
     controller = Controller()
-    err = controller.run()
+    err = controller.run(kafka_admin_client)
 
     if err:
         # Display k4 logo

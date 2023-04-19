@@ -10,7 +10,7 @@ def main(stdscr):
     # start colors
     curses_color = CursesColor()
     curses_color.start_color()
-    curses_color.init_colors()
+    curses_color.init_colors(color_names=["WHITE", "RED", "LIGHT_SKY_BLUE", "GOLDENROD", "MEDIUM_PURPLE"])
 
     curses_color_pair = CursesColorPair(curses_color)
     curses_color_pair.init_pairs()
@@ -20,7 +20,7 @@ def main(stdscr):
     max_y, max_x = stdscr.getmaxyx()
 
     # Create top sub-window
-    h = max_y // 2 - 1
+    h = max_y // 3 - 1
     w = max_x
     y = 0
     x = 0
@@ -28,19 +28,18 @@ def main(stdscr):
     top_win.bkgd(curses_color_pair["WHITE_ON_BLACK"])
     
     # Create bottom sub-window
-    h = max_y // 2 - 1
+    h = (max_y // 3) * 2 - 1
     w = max_x
-    y = max_y // 2
+    y = max_y // 3
     x = 0
     bottom_win = stdscr.subwin(h, w, y, x)
     bottom_win.box()
-    bottom_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
+    bottom_win.bkgd(curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
 
     # Create bottom derived-window
     scroll_manager = ScrollManager()
     scroll_win = bottom_win.derwin(h - 2 , w - 3, 1, 2)
-    scroll_win.bkgd(curses_color_pair["SKY_ON_BLACK"])
-    scroll_manager.init(scroll_win)
+    scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
 
     stdscr.refresh()
 
@@ -49,14 +48,19 @@ def main(stdscr):
     for num in range(100):
         if num == 0:
             items.append({'text': f'{num + 1}. Header', 'color_pair_id': curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD})
+        elif num == 5:
+            items.append({'text': f'{num + 1}. Creating', 'color_pair_id': curses_color_pair["GOLDENROD_ON_DEFAULT"] | curses.A_BOLD})
         elif num == 10:
             items.append({'text': f'{num + 1}. Error', 'color_pair_id': curses_color_pair["RED_ON_BLACK"] | curses.A_BOLD})
+        elif num == 15:
+            items.append({'text': f'{num + 1}. Deleting', 'color_pair_id': curses_color_pair["MEDIUM_PURPLE_ON_BLACK"] | curses.A_BOLD})
         else:
             items.append({'text': f'{num + 1}. Item'})
 
     # Set scroll items
     scroll_manager.items = items
 
+    ch  = -1
     while True:
         # Display colorized scroll items
         scroll_manager.display()
@@ -64,7 +68,8 @@ def main(stdscr):
         # Select the current item
         top_win.erase()
         current_text = scroll_manager.select_text()
-        top_win.addstr(4, max_x // 2 - len(current_text) // 2 , current_text, curses.A_BOLD)
+        current_text_color_pair_id = scroll_manager.select_text_color_pair_id()
+        top_win.addstr(4, max_x // 2 - len(current_text) // 2 , current_text, current_text_color_pair_id | curses.A_BOLD)
         top_win.refresh()
 
         ch = stdscr.getch()

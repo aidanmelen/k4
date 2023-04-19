@@ -38,7 +38,7 @@ def test_curses_color_start_color_without_extended_colors(mock_curses):
 
 
 def test_curses_color_init_colors(curses_color):
-    assert curses_color._color_name_to_rgb.keys() == curses_color.color_name_to_number.keys()
+    assert list(curses_color.color_name_to_number.keys()) == ['WHITE', 'BLACK', 'RED', 'GREEN', 'BLUE']
 
 
 def test_curses_color_has_colors(mock_curses):
@@ -47,7 +47,7 @@ def test_curses_color_has_colors(mock_curses):
     assert not cc.has_colors
 
     cc.start_color()
-    cc.init_colors()
+    cc.init_colors(color_names = ['WHITE', 'BLACK', 'RED', 'GREEN', 'BLUE'])
     assert cc.has_colors
 
 
@@ -63,9 +63,9 @@ def test_curses_color_color_name_to_number(curses_color):
 
 def test_curses_color_is_color_initialized(curses_color):
     # assign color number from COLOR-1 (256) to 0
-    assert curses_color.is_color_initialized(255)
-    assert curses_color.is_color_initialized(250)
-    assert curses_color.is_color_initialized(245)
+    for color_name in ["WHITE", "BLACK", "RED", "GREEN", "BLUE"]:
+        expected_color_number = curses_color.color_name_to_number[color_name]
+        assert curses_color.is_color_initialized(expected_color_number)
 
     # color 50 should not be set because we only have like 50 pre-defined colors
     assert not curses_color.is_color_initialized(50)
@@ -117,16 +117,12 @@ def test_curses_color__getitem__(curses_color):
 
 
 def test_curses_color_get(curses_color):
-    curses_color.start_color()
-    curses_color.init_colors()
     assert curses_color["RED"] == curses_color.get("RED")
     assert curses_color.COLOR_DEFAULT == curses_color.get("FAKE")
     assert 10 == curses_color.get("FAKE", 10)
 
 
 def test_curses_color__iter__(curses_color):
-    curses_color.start_color()
-    curses_color.init_colors()
     color_name_to_number_iter = iter(curses_color)
     assert ("WHITE", 255) == next(color_name_to_number_iter)
     assert ("BLACK", 254) == next(color_name_to_number_iter)
@@ -134,8 +130,6 @@ def test_curses_color__iter__(curses_color):
 
 
 def test_curses_color_items(curses_color):
-    curses_color.start_color()
-    curses_color.init_colors()
     color_name_to_number_items = dict(curses_color.items())
     assert color_name_to_number_items["RED"] == 253
     assert color_name_to_number_items["GREEN"] == 252

@@ -10,7 +10,7 @@ def test_curses_color_pair_init_pairs(curses_color):
     cc.init_pairs()
     cc.init_pairs("BLACK")
     cc.init_pairs("WHITE")
-    assert "WHITE_ON_NONE" in cc.pair_name_to_number
+    assert "WHITE_ON_DEFAULT" in cc.pair_name_to_number
     assert "WHITE_ON_BLACK" in cc.pair_name_to_number
     assert "RED_ON_WHITE" in cc.pair_name_to_number
 
@@ -20,7 +20,7 @@ def test_curses_color_pair_init_pair(curses_color):
     cc.init_pair("WHITE")
     cc.init_pair("WHITE", "BLUE")
     cc.init_pair("CYAN", "BLACK")
-    assert "WHITE_ON_NONE" in cc.pair_name_to_number
+    assert "WHITE_ON_DEFAULT" in cc.pair_name_to_number
     assert "WHITE_ON_BLUE" in cc.pair_name_to_number
     assert "CYAN_ON_BLACK" in cc.pair_name_to_number
     assert "GRAY_ON_BLACK" not in cc.pair_name_to_number
@@ -56,8 +56,8 @@ def test_curses_color_pair_get(curses_color_pair):
 
 def test_curses_color_pair__iter__(curses_color_pair):
     pair_name_to_number_items = iter(curses_color_pair)
-    assert "WHITE_ON_NONE" == next(pair_name_to_number_items)[0]
+    assert "WHITE_ON_DEFAULT" == next(pair_name_to_number_items)[0]
 
 
 def test_curses_color_pair_items(curses_color_pair):
-    assert "GRAY_ON_NONE" in dict(curses_color_pair.items())
+    assert "BLACK_ON_DEFAULT" in dict(curses_color_pair.items())

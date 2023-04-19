@@ -9,7 +9,6 @@ class ScrollManager:
     def init(self, window: curses.window, color_pair_id: int = 1, start_line: int = 0) -> None:
         """
         Initialize the screen window
-
         ┌--------------------------------------┐
         |1. Item                               |
         |--------------------------------------| <- top = 1
@@ -26,10 +25,8 @@ class ScrollManager:
         |                                      |
         |                                      | <- page = 1 (0 and 1)
         └--------------------------------------┘
-
         Attributes
             window: A full curses screen window
-
         Returns
             None
         """
@@ -62,8 +59,8 @@ class ScrollManager:
     @items.setter
     def items(self, items: List[Dict[str, str]]):
         # Update scroll book-keeping given the items
-        self.bottom = len(self.__items)
         self.__items = items
+        self.bottom = len(self.__items)
 
     def scroll(self, direction: int) -> None:
         """Scrolling the window when pressing up/down arrow keys"""
@@ -127,6 +124,10 @@ class ScrollManager:
     def select_text(self):
         """Return the text from the current item."""
         return str(self.current_item.get("text"))
+    
+    def select_text_color_pair_id(self):
+        """Return the text color pair id from the current item."""
+        return int(self.current_item.get("color_pair_id", self.color_pair_id))
 
     def display(self, should_pad_right_with_spaces: bool = True) -> None:
         """Display a scrollable list of items."""

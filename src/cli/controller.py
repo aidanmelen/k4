@@ -1,9 +1,11 @@
+from confluent_kafka.admin import AdminClient
 from .color import curses_color, curses_color_pair
 from .model import *
 from .view import *
 from .error import K4Error
 
 import curses
+import time
 
 
 class Navigation:
@@ -14,27 +16,30 @@ class Navigation:
                 "view": TopicView,
                 "model": TopicModel,
             },
-            "consumergroups": {
-                "view": ConsumerGroupView,
-                "model": ConsumerGroupModel,
-            },
+            # "consumergroups": {
+            #     "view": ConsumerGroupView,
+            #     "model": ConsumerGroupModel,
+            # },
         }
 
         self.aliases = {
-            "brokers": ("broker", "bros", "brkrs", "b"),
-            "topics": ("topic", "tops", "t"),
+            "brokers": ("broker", "bros", "bro", "brkrs", "brkr", "b"),
+            "topics": ("topic", "tops", "top", "t"),
             "consumergroups": (
                 "consumers",
                 "consumer",
                 "cons",
+                "con",
                 "c",
                 "groups",
                 "group",
                 "grps",
+                "grp",
                 "g",
                 "subscribers",
                 "subscriber",
                 "subs",
+                "sub",
                 "s",
             ),
             "aliases": ("alias", "a"),
@@ -52,9 +57,9 @@ class Navigation:
             self.current_focus = "consumergroups"
 
 
-    def get_current_focus(self, window):
+    def get_current_focus(self, window, kafka_admin_client):
         view = self.focuses[self.current_focus]["view"](window)
-        model = self.focuses[self.current_focus]["model"]()
+        model = self.focuses[self.current_focus]["model"](kafka_admin_client)
         return view, model
 
 
@@ -75,14 +80,13 @@ class Controller:
 
         self.navigation = Navigation()
 
-    def run(self):
+    def run(self, kafka_admin_client: AdminClient):
         try:
-            view, model = self.navigation.get_current_focus(self.screen)
+            # Initialize home screen
+            view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client)
 
             while True:
-                model_data = model.data
-
-                view.display(model_data)
+                view.display(model)
 
                 # handle user input
                 ch = view.get_ch()
@@ -91,7 +95,7 @@ class Controller:
                 if ch == ord(":"):
                     command = view.get_command(model_data)
                     self.navigation.navigate(command)
-                    view, model = self.navigation.get_current_focus(self.screen)
+                    view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client)
 
                     if command == "quit" or command in self.navigation.aliases["quit"]:
                         break
