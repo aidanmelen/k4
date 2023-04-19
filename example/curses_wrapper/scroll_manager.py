@@ -49,7 +49,7 @@ def main(stdscr):
         if num == 0:
             items.append({'text': f'{num + 1}. Header', 'color_pair_id': curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD})
         elif num == 5:
-            items.append({'text': f'{num + 1}. Creating', 'color_pair_id': curses_color_pair["GOLDENROD_ON_DEFAULT"] | curses.A_BOLD})
+            items.append({'text': f'{num + 1}. Creating', 'color_pair_id': curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD})
         elif num == 10:
             items.append({'text': f'{num + 1}. Error', 'color_pair_id': curses_color_pair["RED_ON_BLACK"] | curses.A_BOLD})
         elif num == 15:
