@@ -38,7 +38,13 @@ def test_curses_color_start_color_without_extended_colors(mock_curses):
 
 
 def test_curses_color_init_colors(curses_color):
-    assert list(curses_color.color_name_to_number.keys()) == ['WHITE', 'BLACK', 'RED', 'GREEN', 'BLUE']
+    assert list(curses_color.color_name_to_number.keys()) == [
+        "WHITE",
+        "BLACK",
+        "RED",
+        "GREEN",
+        "BLUE",
+    ]
 
 
 def test_curses_color_has_colors(mock_curses):
@@ -47,8 +53,12 @@ def test_curses_color_has_colors(mock_curses):
     assert not cc.has_colors
 
     cc.start_color()
-    cc.init_colors(color_names = ['WHITE', 'BLACK', 'RED', 'GREEN', 'BLUE'])
+    cc.init_colors(color_names=["WHITE", "BLACK", "RED", "GREEN", "BLUE"])
     assert cc.has_colors
+
+
+def test_curses_color_color_color_names(curses_color):
+    assert curses_color.color_names == curses_color._color_name_to_rgb.keys()
 
 
 def test_curses_color_color_content_by_name(curses_color):

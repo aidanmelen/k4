@@ -6,8 +6,20 @@ def main(stdscr):
     # Start colors and init color pairs
     curses_color = CursesColor()
     curses_color.start_color()
-    random_color_names = random.sample(list(curses_color.color_name_to_rgb.keys()), 200)
-    curses_color.init_colors(color_names=random_color_names)
+    # random_color_names = random.sample(list(curses_color.color_name_to_rgb.keys()), 200)
+    # curses_color.init_colors(color_names=random_color_names)
+
+    curses_color.init_colors(color_names=[
+        "BLACK",
+        "VIOLET",
+        "INDIGO",
+        "BLUE",
+        "GREEN",
+        "YELLOW",
+        "ORANGE",
+        "RED",
+        "WHITE"
+    ])
 
     curses_color_pair = CursesColorPair(curses_color)
     curses_color_pair.init_pairs()

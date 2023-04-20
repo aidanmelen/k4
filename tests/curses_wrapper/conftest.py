@@ -29,7 +29,7 @@ def mock_curses():
 def curses_color(mock_curses):
     cc = CursesColor()
     cc.start_color()
-    cc.init_colors(color_names = ["WHITE", "BLACK", "RED", "GREEN", "BLUE"])
+    cc.init_colors(color_names=["WHITE", "BLACK", "RED", "GREEN", "BLUE"])
     return cc
 
 

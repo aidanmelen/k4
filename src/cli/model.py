@@ -1,47 +1,24 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 from tabulate import tabulate
 from kafka_wrapper.topic import Topic
 from kafka_wrapper.consumer_group import ConsumerGroup
+from .timer import Timer
+from . import helper
 
-import time
-
-class Timer:
-    def __init__(self):
-        self.__current_time = time.perf_counter()
-        self.__last_time = self.__current_time
-        self.__elapsed_time = 0
-
-    @property
-    def elapse_time(self):
-        return self.__elapsed_time
-
-    def has_time_elapsed(self, time_seconds: int):
-        return self.__elapsed_time > time_seconds
-    
-    def lap(self):
-        self.__current_time = time.perf_counter()
-        self.__elapsed_time = self.__current_time - self.__last_time
-
+import re
 
 class TopicModel:
-    def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10, refresh_wait_seconds: int = 10):
+    def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10) -> None:
         self.client = Topic(admin_client_config=admin_client_config, timeout=timeout)
         self.timer = Timer()
 
-        # Data Refresh
-        self.__refresh_wait_seconds = refresh_wait_seconds
-
         # Data
         self.__name = "Topic"
-        self.__info = {
-            "context": None,
-            "cluster": None,
-            "user": None
-        }
+        self.__info = {"context": None, "cluster": None, "user": None}
         self.__namespaces = {}
         self.__controls = {
             "c": "Consume",
-            "ctrl-c": "Create",
+            "shift-c": "Create",
             "ctrl-d": "Delete",
             "d": "Describe",
             "e": "Edit",
@@ -52,71 +29,50 @@ class TopicModel:
         self.__contents = []
 
     @property
-    def refresh_wait_seconds(self):
-        return self.__refresh_wait_seconds
-
-    @refresh_wait_seconds.setter
-    def refresh_wait_seconds(self, value: int):
-        self.__refresh_wait_seconds = int(value)
-
-    @property
-    def name(self):
+    def name(self) -> str:
         return self.__name
 
     @property
-    def info(self):
+    def info(self) -> Dict[str, str]:
         return self.__info
-    
+
     @property
-    def namespaces(self):
+    def namespaces(self) -> Dict[str, str]:
         return self.__namespaces
-    
+
     @property
-    def contents(self):
+    def contents(self) -> List[str]:
         return self.__contents
-    
+
     @property
-    def controls(self):
+    def controls(self) -> Dict[str, str]:
         return self.__controls
 
-    def get_top_namespaces(names: List[str] = [], max_value: int = 10):
-        namespaces_counts = {}
+    def refresh_namespaces(self) -> None:
+        topics = self.client.list()
+        topic_names = [topic["name"] for topic in topics]
+        top_namespaces = list(helper.get_top_prefixes(topic_names).keys())
+        self.__namespaces = dict(enumerate(top_namespaces))
 
-        for string in lst:
-            if string.startswith(("-", ".", "_")):
-                namespaces = string.split(string[0], 1)[1].split(("-", ".", "_"), 1)[0]
-            else:
-                namespaces = string.split(("-", ".", "_"), 1)[0]
+    def refresh_contents(self) -> None:
+        topics = self.client.list()
+        headers = ["TOPIC", "PARTITION"]
+        lines = [[r["name"], r["partitions"]] for r in topics]
+        self.__contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
 
-            if namespaces in namespaces_counts:
-                namespaces_counts[namespaces] += 1
-            else:
-                namespaces_counts[namespaces] = 1
+        # self.__contents = [
+        #     "TOPIC                              PARTITION",
+        #     "_schemas_schemaregistry_confluent  1        ",
+        #     "confluent.connect-configs          1        ",
+        #     "confluent.connect-offsets          25       ",
+        #     "confluent.connect-status           5        ",
+        # ]
 
-        sorted_namespaces_counts = sorted(namespaces_counts.items(), key=get_count, reverse=True)[:10]
-        top_namespaces = {}
-        for i, (namespaces, count) in enumerate(sorted_namespaces_counts):
-            if i > max_value:
-                # Only return top max namespaces
-                break
-            top_namespaces[str(i+1)] = namespaces
-
-        return top_namespaces
-
-    def refresh(self, refresh_wait_seconds: int = 10, **kwargs):    
-        self.timer.lap()   
-        if timer.has_time_elapsed(seconds=refresh_wait_seconds):
-
-            # Refresh namespace data
-            topics = self.client.list(**kwargs)
-            topic_names = [topic["name"] for topic in topics]
-            self.__namespaces = self.get_top_namespaces(topic_names)
-            
-            # Refresh contents data
-            topics = self.client.list(**kwargs)
-            headers = ["TOPIC", "PARTITION"]
-            lines = [[r["name"], r["partitions"]] for r in topics]
-            self.__contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left")
+    def refresh(self, wait_seconds: int = 10) -> None:
+        if self.timer.has_elapsed(seconds = wait_seconds):
+            self.refresh_namespaces()
+            self.refresh_contents()
+            self.timer.reset()
 
 
 # class ConsumerGroupModel:

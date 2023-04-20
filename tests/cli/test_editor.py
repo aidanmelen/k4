@@ -1,7 +1,7 @@
 import os
 from unittest.mock import patch, mock_open, call
-import pytest
 from cli import editor
+import pytest
 
 
 @patch("os.path.isfile")

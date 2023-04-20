@@ -121,12 +121,12 @@ class ScrollManager:
         elif ch == curses.KEY_RIGHT:
             self.paging(self.DOWN)
 
-    def select_text(self):
-        """Return the text from the current item."""
-        return str(self.current_item.get("text"))
-    
-    def select_text_color_pair_id(self):
-        """Return the text color pair id from the current item."""
+    def select_line(self):
+        """Return the line from the current item."""
+        return str(self.current_item.get("line"))
+
+    def select_line_color_pair_id(self):
+        """Return the line color pair id from the current item."""
         return int(self.current_item.get("color_pair_id", self.color_pair_id))
 
     def display(self, should_pad_right_with_spaces: bool = True) -> None:
@@ -135,22 +135,26 @@ class ScrollManager:
         self.window.erase()
 
         # Ensure lines are written within window columns
-        max_x = self.max_x - 1
+        # self.max_x = self.self.max_x - 1
 
         for y, item in enumerate(self.__items[self.top : self.top + self.max_lines]):
 
-            text = item["text"]
+            line = item["line"]
             color_pair_id = item.get("color_pair_id", self.color_pair_id)
 
             if should_pad_right_with_spaces:
-                spaces = " " * (max_x - len(item))
-                text += spaces
+                spaces = " " * (self.max_x - len(item))
+                line += spaces
 
             # Highlight the current cursor line
-            if y == self.current:
-                self.window.addnstr(y, 0, text, max_x, color_pair_id | curses.A_REVERSE)
-                self.current_item = item
-            elif self.max_y > 0:
-                self.window.addnstr(y, 0, text, max_x, color_pair_id)
+            try:
+                if y == self.current:
+                    self.window.addnstr(y, 0, line, self.max_x, color_pair_id | curses.A_REVERSE | curses.A_BOLD)
+                    self.current_item = item
+                elif self.max_y > 0:
+                    self.window.addnstr(y, 0, line, self.max_x, color_pair_id)
+            except curses.error:
+                # Do not crash when user scrolls to the last line of the window.
+                continue
 
         self.window.refresh()

@@ -10,7 +10,7 @@ def main(stdscr):
     # start colors
     curses_color = CursesColor()
     curses_color.start_color()
-    curses_color.init_colors(color_names=["WHITE", "RED", "LIGHT_SKY_BLUE", "GOLDENROD", "MEDIUM_PURPLE"])
+    curses_color.init_colors(color_names=["WHITE", "RED", "LIGHT_SKY_BLUE", "ORANGE", "MEDIUM_PURPLE", "BLACK"])
 
     curses_color_pair = CursesColorPair(curses_color)
     curses_color_pair.init_pairs()
@@ -38,7 +38,7 @@ def main(stdscr):
 
     # Create bottom derived-window
     scroll_manager = ScrollManager()
-    scroll_win = bottom_win.derwin(h - 2 , w - 3, 1, 2)
+    scroll_win = bottom_win.derwin(h - 2 , w - 4, 1, 2)
     scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
 
     stdscr.refresh()
@@ -47,15 +47,15 @@ def main(stdscr):
     items = []
     for num in range(100):
         if num == 0:
-            items.append({'text': f'{num + 1}. Header', 'color_pair_id': curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD})
+            items.append({'line': f'{num + 1}. Header', 'color_pair_id': curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD})
         elif num == 5:
-            items.append({'text': f'{num + 1}. Creating', 'color_pair_id': curses_color_pair["GOLDENROD_ON_BLACK"] | curses.A_BOLD})
+            items.append({'line': f'{num + 1}. Creating', 'color_pair_id': curses_color_pair["ORANGE_ON_BLACK"] | curses.A_BOLD})
         elif num == 10:
-            items.append({'text': f'{num + 1}. Error', 'color_pair_id': curses_color_pair["RED_ON_BLACK"] | curses.A_BOLD})
+            items.append({'line': f'{num + 1}. Error', 'color_pair_id': curses_color_pair["RED_ON_BLACK"] | curses.A_BOLD})
         elif num == 15:
-            items.append({'text': f'{num + 1}. Deleting', 'color_pair_id': curses_color_pair["MEDIUM_PURPLE_ON_BLACK"] | curses.A_BOLD})
+            items.append({'line': f'{num + 1}. Deleting', 'color_pair_id': curses_color_pair["MEDIUM_PURPLE_ON_BLACK"] | curses.A_BOLD})
         else:
-            items.append({'text': f'{num + 1}. Item'})
+            items.append({'line': f'{num + 1}. Item'})
 
     # Set scroll items
     scroll_manager.items = items
@@ -67,9 +67,9 @@ def main(stdscr):
 
         # Select the current item
         top_win.erase()
-        current_text = scroll_manager.select_text()
-        current_text_color_pair_id = scroll_manager.select_text_color_pair_id()
-        top_win.addstr(4, max_x // 2 - len(current_text) // 2 , current_text, current_text_color_pair_id | curses.A_BOLD)
+        current_line = scroll_manager.select_line()
+        current_line_color_pair_id = scroll_manager.select_line_color_pair_id()
+        top_win.addstr(4, max_x // 2 - len(current_line) // 2 , current_line, current_line_color_pair_id | curses.A_BOLD)
         top_win.refresh()
 
         ch = stdscr.getch()

@@ -47,15 +47,15 @@ def cli(bootstrap_servers, kafka_config, log_level):
     """A command-line client for Kafka."""
 
     log_level = log_level
-    kafka_admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
+    kafka_admin_client_config = {"bootstrap.servers": bootstrap_servers}
 
     controller = Controller()
-    err = controller.run(kafka_admin_client)
+    err = controller.run(kafka_admin_client_config)
 
     if err:
         # Display k4 logo
         click.echo(click.style("\n".join(err.LOGO), fg="red", bold=True))
-        click.echo(click.style(str(err) + "\n", bold=True))
+        click.echo("\n" + click.style(str(err) + "\n", bold=True))
 
         # Then display the traceback
         raise err.error
