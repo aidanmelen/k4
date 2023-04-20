@@ -3,8 +3,23 @@ from typing import List, Dict
 
 import re
 
+
 def chunk_dict(d: Dict[str, str], chunk_size=6):
-    """Split a dictionary into a list of dictionaries, with each sub-dictionary containing at most chunk_size key-value pairs."""
+    """
+    Splits a dictionary into a list of sub-dictionaries, with each sub-dictionary containing at most chunk_size key-value pairs.
+
+    Args:
+        d (Dict[str, str]): The input dictionary to be chunked.
+        chunk_size (int, optional): The maximum number of key-value pairs in each sub-dictionary. Defaults to 6.
+
+    Returns:
+        List[Dict[str, str]]: A list of sub-dictionaries, each containing at most chunk_size key-value pairs.
+
+    Example:
+        >>> d = {'a': '1', 'b': '2', 'c': '3', 'd': '4', 'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9', 'j': '10'}
+        >>> chunk_dict(d, chunk_size=3)
+        [{'a': '1', 'b': '2', 'c': '3'}, {'d': '4', 'e': '5', 'f': '6'}, {'g': '7', 'h': '8', 'i': '9'}, {'j': '10'}]
+    """
     chunks = []
     chunk = {}
     for k, v in d.items():
@@ -15,6 +30,7 @@ def chunk_dict(d: Dict[str, str], chunk_size=6):
     if chunk:
         chunks.append(chunk)
     return chunks
+
 
 def get_top_prefixes(names: List[str], max_keys: int = 10) -> Dict[str, int]:
     """
