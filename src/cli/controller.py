@@ -16,10 +16,10 @@ class Navigation:
                 "view": TopicView,
                 "model": TopicModel,
             },
-            # "consumergroups": {
-            #     "view": ConsumerGroupView,
-            #     "model": ConsumerGroupModel,
-            # },
+            "consumergroups": {
+                "view": ConsumerGroupView,
+                "model": ConsumerGroupModel,
+            },
         }
 
         self.aliases = {
@@ -105,20 +105,21 @@ class Controller:
                 model.refresh()
                 view.display(model)
 
-                # handle user input
+                # Handle user input
                 ch = view.get_ch()
 
-                # handle user command
+                # Handle user command
                 if ch == ord(":"):
                     command = view.get_command(model)
                     self.navigation.navigate(command)
+                    
                     view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
                     model.refresh(wait_seconds=0)
 
                     if command == "quit" or command in self.navigation.aliases["quit"]:
                         break
 
-                # handle screen resize
+                # Handle screen resize
                 elif ch == curses.KEY_RESIZE:
                     view.handle_resize()
 

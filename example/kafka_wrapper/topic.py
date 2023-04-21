@@ -1,9 +1,9 @@
 from kafka_wrapper.topic import Topic
-from cli.editor import open_config
+from cli import editor
 import json
 
 
-admin_client_config = {"bootstrap.servers": "kafka:9092"}
+admin_client_config = {"bootstrap.servers": "localhost:9092"}
 
 topic = Topic(admin_client_config, timeout=3)
 
@@ -28,7 +28,7 @@ print(json.dumps(topic_configs, indent=4, sort_keys=True), "\n\n")
 
 print("Alter Topic")
 topic_config = {k:v for k,v in topic_configs[topic_name].items() if v != "-"}
-new_config = open_config(topic_config)
+new_config = editor.open_config(topic_config)
 print(json.dumps(topic.alter(topic_name, config=new_config), indent=4, sort_keys=True), "\n\n")
 
 # print("And verify topic config alteration")

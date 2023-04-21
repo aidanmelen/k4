@@ -44,18 +44,18 @@ def get_top_prefixes(names: List[str], max_keys: int = 10) -> Dict[str, int]:
         Dict[str, int]: A dictionary of the most common topic prefixes and their counts.
 
     Example:
-        >>> names = ["topic1", "_topic1", "topic2.test", "topic2.example", "topic3.v1"]
+        >>> names = ["topic1", "_topic1", "topic2.v1", "topic2.v2", "topic3-example", "topic3-test", "Topic3"]
         >>> get_top_prefixes(names)
-        {'topic1': 2, 'topic2': 2, 'topic3': 1}
+        {'topic3': 3, 'topic1': 2, 'topic2': 2}
     """
     pattern = r"^[._-]?([a-zA-Z0-9]+)"
 
     namespace_to_counts = defaultdict(int)
 
     for name in names:
-        match = re.match(pattern, name)
+        match = re.match(pattern, name, re.IGNORECASE)
         if match:
-            namespace_to_counts[match.group(1)] += 1
+            namespace_to_counts[match.group(1).lower()] += 1
     
     top_prefix_to_counts = {k:v for k, v in sorted(namespace_to_counts.items(), key=lambda item: item[1], reverse=True)[:max_keys]}
 

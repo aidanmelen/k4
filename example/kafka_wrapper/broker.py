@@ -1,5 +1,5 @@
 from kafka_wrapper.broker import Broker
-from cli.editor import open_config
+from cli import editor
 import json
 
 
@@ -20,7 +20,7 @@ print(json.dumps(broker.describe_configs(), indent=4, sort_keys=True), "\n\n")
 
 print("Alter all Brokers")
 per_topic_configs = broker.describe_configs(dynamic_only=True)
-new_per_topic_configs = open_config(per_topic_configs)
+new_per_topic_configs = editor.open_config(per_topic_configs)
 print(json.dumps(broker.alter(config=new_per_topic_configs), indent=4, sort_keys=True), "\n\n")
 
 # print("And verify broker config alteration")

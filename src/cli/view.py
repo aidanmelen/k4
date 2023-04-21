@@ -98,7 +98,7 @@ class BaseView:
                     1,
                     key,
                     max_k + len(": "),
-                    curses_color_pair["ORANGE_ON_BLACK"] | curses.A_BOLD,
+                    curses_color_pair["ORANGE_ON_BLACK"],
                 )
 
             # Format value
@@ -116,8 +116,8 @@ class BaseView:
         namespaces_x = 50
         chunked_namespaces = helper.chunk_dict(model.namespaces)
         for namespaces in chunked_namespaces:
-            max_k = max(len(str(k)) + 1 for k in namespaces.keys())
-            max_v = max(len(str(v)) + 1 for v in namespaces.values())
+            max_k = max(len(str(k)) + len(" ") for k in namespaces.keys())
+            max_v = max(len(str(v)) + len(" ") for v in namespaces.values())
             for y, k in enumerate(itertools.islice(namespaces, self.bottom_y)):
 
                 # Format key

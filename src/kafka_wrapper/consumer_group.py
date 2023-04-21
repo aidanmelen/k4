@@ -168,14 +168,20 @@ class ConsumerGroup(KafkaResource):
         return result
 
     def describe(self, group_ids=[], include_offset_lag=True):
+        results = {}
+
+        # Default to listing all group ids
         if not group_ids:
             group_ids = [group["id"] for group in self.list()]
+
+        # There are no group ids on the cluster
+        if not group_ids:
+            results
 
         future = self._admin_client.describe_consumer_groups(
             group_ids, request_timeout=self._timeout
         )
 
-        results = {}
 
         # Describe consumer groups
         for group_id, f in future.items():
