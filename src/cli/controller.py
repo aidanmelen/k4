@@ -105,6 +105,8 @@ class Controller:
                 model.refresh()
                 view.display(model)
 
+                view.select_scroll_line().spit(" ")[0]
+
                 # Handle user input
                 ch = view.get_ch()
 

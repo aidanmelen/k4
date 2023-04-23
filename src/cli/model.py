@@ -11,7 +11,8 @@ import os
 class BaseModel:
     def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10) -> None:
         self.name = None
-        self.info = {"context": None, "cluster": None, "user": None}
+        self.bootstrap_servers = admin_client_config.get("bootstrap.servers")
+        self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
         self.namespaces = {}
         self.controls = {}
         self.contents = []
@@ -19,7 +20,7 @@ class BaseModel:
         self.timer = Timer()
 
     def refresh_info(self) -> None:
-        self.info = {"context": None, "cluster": None, "user": None}
+        self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
 
     def refresh_namespaces(self) -> None:
         self.namespace = {}
@@ -50,7 +51,7 @@ class TopicModel(BaseModel):
             self.client = None
 
     def refresh_info(self) -> None:
-        self.info = {"context": None, "cluster": None, "user": None}
+        self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
 
     def refresh_namespaces(self) -> None:
         if not os.environ.get("K4_DEBUG_OFFLINE"):
@@ -104,7 +105,7 @@ class ConsumerGroupModel(BaseModel):
             self.client = None
 
     def refresh_info(self) -> None:
-        self.info = {"context": None, "cluster": None, "user": None}
+        self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
 
     def refresh_namespaces(self) -> None:
         if not os.environ.get("K4_DEBUG_OFFLINE"):
@@ -142,9 +143,10 @@ class ConsumerGroupModel(BaseModel):
                 "CURRENT-OFFSET",
                 "LOG-END-OFFSET",
                 "LAG",
-                "CONSUMER-ID",
-                "HOST",
-                "CLIENT-ID",
+                "STATUS"
+                # "CONSUMER-ID",
+                # "HOST",
+                # "CLIENT-ID",
             ]
             lines = []
             for group, metadata in self.client.describe().items():
@@ -158,9 +160,10 @@ class ConsumerGroupModel(BaseModel):
                                 a["current_offset"],
                                 a["log_end_offset"],
                                 a["lag"],
-                                m["id"],
-                                m["host"],
-                                m["client_id"],
+                                "Running" if all([m["id"], m["host"], m["client_id"]]) else "Stopped"
+                                # m["id"],
+                                # m["host"],
+                                # m["client_id"],
                             ]
                         )
             self.contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()

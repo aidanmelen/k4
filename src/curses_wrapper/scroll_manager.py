@@ -5,8 +5,9 @@ import curses
 class ScrollManager:
     UP = -1
     DOWN = 1
+    HEADER_LINE = 1
 
-    def init(self, window: curses.window, color_pair_id: int = 1, start_line: int = 0) -> None:
+    def init(self, window: curses.window, color_pair_id: int = 1, start_line: int = 0, has_fixed_header_line: bool = False) -> None:
         """
         Initialize the screen window
         ┌--------------------------------------┐
@@ -32,6 +33,7 @@ class ScrollManager:
         """
         self.window = window
         self.color_pair_id = color_pair_id
+        self.has_fixed_header_line = has_fixed_header_line
 
         self.max_y, self.max_x = self.window.getmaxyx()
         self.y, self.x = self.window.getbegyx()
@@ -67,9 +69,11 @@ class ScrollManager:
         # next cursor position after scrolling
         next_line = self.current + direction
 
+        cursor_position = 1 if self.has_fixed_header_line else 0
+
         # Up direction scroll overflow
         # current cursor position is 0, but top position is greater than 0
-        if (direction == self.UP) and (self.top > 0 and self.current == 0):
+        if (direction == self.UP) and (self.top > 0 and self.current == cursor_position):
             self.top += direction
             return
         # Down direction scroll overflow
@@ -129,30 +133,55 @@ class ScrollManager:
         """Return the line color pair id from the current item."""
         return int(self.current_item.get("color_pair_id", self.color_pair_id))
 
-    def display(self, should_pad_right_with_spaces: bool = True) -> None:
+    def display(self, should_highlight_max_x: bool = True) -> None:
         """Display a scrollable list of items."""
         # Erase the window to prevent streaking on scroll
         self.window.erase()
 
-        # Ensure lines are written within window columns
-        # self.max_x = self.self.max_x - 1
-
-        for y, item in enumerate(self.__items[self.top : self.top + self.max_lines]):
+        for y, item in enumerate(self.__items[self.top: self.top + self.max_lines]):
 
             line = item["line"]
             color_pair_id = item.get("color_pair_id", self.color_pair_id)
 
-            if should_pad_right_with_spaces:
-                spaces = " " * (self.max_x - len(item))
+            if should_highlight_max_x:
+                spaces = " " * (self.max_x - len(line))
                 line += spaces
 
-            # Highlight the current cursor line
             try:
-                if y == self.current:
-                    self.window.addnstr(y, 0, line, self.max_x, color_pair_id | curses.A_REVERSE | curses.A_BOLD)
-                    self.current_item = item
-                elif self.max_y > 0:
-                    self.window.addnstr(y, 0, line, self.max_x, color_pair_id)
+                # Lock header line
+                if self.has_fixed_header_line:
+                    header_line = self.__items[0]["line"]
+                    header_color_pair = self.__items[0].get("color_pair_id", self.color_pair_id)
+
+                    if should_highlight_max_x:
+                        spaces = " " * (self.max_x - len(header_line))
+                        header_line += spaces
+
+                    # Highlight the current cursor header line
+                    if y == self.current == 0:
+                        self.window.addnstr(y, 0, header_line, self.max_x, header_color_pair | curses.A_REVERSE | curses.A_BOLD)
+                        self.current_item = item
+                    
+                    # Highlight the current cursor line
+                    elif y == self.current and y > 0 and y != self.max_lines:
+                        self.window.addnstr(y, 0, line, self.max_x, color_pair_id | curses.A_REVERSE | curses.A_BOLD)
+                        self.current_item = item
+
+                    # Draw fixed header line
+                    elif y == 0:
+                        self.window.addnstr(y, 0, header_line, self.max_x, header_color_pair)
+
+                    # Draw other lines
+                    elif self.max_y > 0 and y != 0:
+                        self.window.addnstr(y, 0, line, self.max_x, color_pair_id)
+
+                else:
+                    if y == self.current:
+                        self.window.addnstr(y, 0, line, self.max_x, color_pair_id | curses.A_REVERSE | curses.A_BOLD)
+                        self.current_item = item
+                    elif self.max_y > 0:
+                        self.window.addnstr(y, 0, line, self.max_x, color_pair_id)
+
             except curses.error:
                 # Do not crash when user scrolls to the last line of the window.
                 continue

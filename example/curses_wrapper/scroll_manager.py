@@ -39,7 +39,7 @@ def main(stdscr):
     # Create bottom derived-window
     scroll_manager = ScrollManager()
     scroll_win = bottom_win.derwin(h - 2 , w - 4, 1, 2)
-    scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
+    scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"], start_line=1, has_fixed_header_line=True)
 
     stdscr.refresh()
 

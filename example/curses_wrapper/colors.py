@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from curses_wrapper.color import CursesColor, CursesColorPair
 import curses
 import random
@@ -6,19 +7,41 @@ def main(stdscr):
     # Start colors and init color pairs
     curses_color = CursesColor()
     curses_color.start_color()
+
     # random_color_names = random.sample(list(curses_color.color_name_to_rgb.keys()), 200)
     # curses_color.init_colors(color_names=random_color_names)
 
     curses_color.init_colors(color_names=[
-        "BLACK",
-        "VIOLET",
-        "INDIGO",
-        "BLUE",
-        "GREEN",
-        "YELLOW",
-        "ORANGE",
         "RED",
-        "WHITE"
+        "SCARLET",
+        "VERMILION",
+        "ORANGE",
+        "PEACH",
+        "YELLOW",
+        "LEMON",
+        "LIME",
+        "CHARTREUSE",
+        "GREEN",
+        "EMERALD",
+        "TEAL",
+        "CYAN",
+        "SKY_BLUE",
+        "BLUE",
+        "NAVY_BLUE",
+        "INDIGO",
+        "VIOLET",
+        "PERSIAN_ROSE",
+        "ROSE",
+        "MAROON",
+        "BROWN",
+        "BEIGE",
+        "IVORY",
+        "CREAM",
+        "WHITE_SMOKE",
+        "GRAY",
+        "SILVER",
+        "WHITE",
+        "BLACK",
     ])
 
     curses_color_pair = CursesColorPair(curses_color)

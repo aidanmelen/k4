@@ -16,7 +16,7 @@ import traceback
     "-b",
     default="localhost:9092",
     metavar="URLS",
-    envvar="K4_BOOTSTRAP_SERVERS",
+    envvar="KAFKA_BOOTSTRAP_SERVERS",
     show_envvar=True,
     help="The Kafka bootstrap servers.",
 )

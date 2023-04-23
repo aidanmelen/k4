@@ -70,7 +70,7 @@ class BaseView:
                 self.middle_scroll_h, self.middle_scroll_w, 1, 2
             )
             self.middle_scroll_win.bkgd(curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
-            self.scroll_manager.init(self.middle_scroll_win, start_line=1)
+            self.scroll_manager.init(self.middle_scroll_win, start_line=1, has_fixed_header_line=True)
         else:
             self.middle_scroll_win = None
 
@@ -253,6 +253,9 @@ class BaseView:
         self.display_middle_scroll_win(model)
         self.display_bottom_win(model)
 
+    def select_scroll_line(self):
+       return scroll_manager.select_line()
+    
     def get_ch(self):
         ch = self.window.getch()
         self.scroll_manager.handle_input(ch)

@@ -17,16 +17,19 @@ build-dev:  ## Build dev docker image
 	docker build -f Dockerfile.dev . --tag $(NAME)
 	
 dev:  ## Run dev container
-	kubectl exec -it $(NAME) -c $(NAME) --namespace confluent -- poetry run bash
-
-run:  ## Run the container
-	docker run -it --rm $(NAME)
-
+	kubectl exec -it $(NAME) -c $(NAME) --namespace kafka -- poetry run bash
+	
 lint:  ## Lint python
 	poetry run black --line-length 100 src tests
 
 test:  ## Test python
 	poetry run pytest
+
+setup-demo:	 ## Setup Demo
+	sh demo/setup.sh
+
+teardown-demo:  ## Teardown Demo
+	sh demo/teardown.sh
 
 # coverage: test ## Test python
 # 	poetry run coverage report -m
