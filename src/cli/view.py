@@ -6,6 +6,7 @@ from . import helper
 import curses
 import curses.textpad
 import itertools
+import textwrap
 
 
 class BaseView:
@@ -70,7 +71,7 @@ class BaseView:
                 self.middle_scroll_h, self.middle_scroll_w, 1, 2
             )
             self.middle_scroll_win.bkgd(curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"])
-            self.scroll_manager.init(self.middle_scroll_win, start_line=1, has_fixed_header_line=True)
+            self.scroll_manager.init(self.middle_scroll_win, cursor_start_position=1, has_fixed_header_line=True)
         else:
             self.middle_scroll_win = None
 
@@ -84,10 +85,10 @@ class BaseView:
         max_x = self.max_x - 1
 
         # Display info
-        info = model.info
-        max_k = max(len(str(k)) + 1 for k in info.keys())
-        max_v = max(len(str(v)) + 1 for v in info.values())
-        for y, k in enumerate(itertools.islice(info, self.bottom_y)):
+        model_info = model.info
+        max_k = max(len(str(k)) + 1 for k in model_info.keys())
+        max_v = max(len(str(v)) + 1 for v in model_info.values())
+        for y, k in enumerate(itertools.islice(model_info, self.bottom_y)):
 
             # Format key
             key = f"{k.capitalize()}: "
@@ -102,20 +103,21 @@ class BaseView:
                 )
 
             # Format value
-            n = max_x - max_k - max_v
+            n = max_x - max_k - 5
             if n > 0:
+                shortened_model_info_key = helper.shorten(str(model_info[k]), width=39, placeholder='…')
                 self.top_win.addnstr(
                     y,
                     max_k + len(": "),
-                    str(info[k]),
+                    shortened_model_info_key,
                     n,
                     curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD,
                 )
 
         # Display namespaces
         namespaces_x = 50
-        chunked_namespaces = helper.chunk_dict(model.namespaces)
-        for namespaces in chunked_namespaces:
+        namespaces_chunks = helper.chunk_dict(model.namespaces)
+        for namespaces in namespaces_chunks:
             max_k = max(len(str(k)) + len(" ") for k in namespaces.keys())
             max_v = max(len(str(v)) + len(" ") for v in namespaces.values())
             for y, k in enumerate(itertools.islice(namespaces, self.bottom_y)):
@@ -148,7 +150,7 @@ class BaseView:
 
         # Display controls
         controls_x = namespaces_x
-        chunked_controls = helper.chunk_dict(model.controls)
+        chunked_controls = helper.chunk_dict(model.get_sorted_controls())
         for controls in chunked_controls:
             max_k = max(len(str(k)) + 1 for k in controls.keys())
             max_v = max(len(str(v)) + 1 for v in controls.values())
@@ -229,7 +231,7 @@ class BaseView:
                     }
                     scroll_manager_items.append(item)
 
-                # Colorize default lines
+                # Colorize BLACK lines
                 else:
                     item = {
                         "line": line,
@@ -253,8 +255,8 @@ class BaseView:
         self.display_middle_scroll_win(model)
         self.display_bottom_win(model)
 
-    def select_scroll_line(self):
-       return scroll_manager.select_line()
+    def select_item_line(self):
+       return self.scroll_manager.select_item_line()
     
     def get_ch(self):
         ch = self.window.getch()

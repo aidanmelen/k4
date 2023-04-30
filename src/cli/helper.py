@@ -60,3 +60,24 @@ def get_top_prefixes(names: List[str], max_keys: int = 10) -> Dict[str, int]:
     top_prefix_to_counts = {k:v for k, v in sorted(namespace_to_counts.items(), key=lambda item: item[1], reverse=True)[:max_keys]}
 
     return top_prefix_to_counts
+
+def shorten(text: str, width: int, placeholder: str = '...') -> str:
+    """
+    Shortens the given text to the specified width by replacing the characters
+    beyond the specified width with the specified placeholder string.
+
+    Args:
+        text: The text to be shortened.
+        width: The maximum width of the shortened text.
+        placeholder: The string to be used as a placeholder for the truncated text.
+
+    Returns:
+        The shortened text as a string.
+
+    """
+    if len(text) < width:
+        return text
+
+    shortened_text = text[:int(width) - len(placeholder)]
+    return shortened_text + placeholder
+

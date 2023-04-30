@@ -105,6 +105,8 @@ class Controller:
                 model.refresh()
                 view.display(model)
 
+                line = view.select_item_line().split(" ")[0]
+
                 # Handle user input
                 ch = view.get_ch()
 

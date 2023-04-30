@@ -48,6 +48,7 @@ class KafkaResource(ABC):
             admin_client_config = {"bootstrap.servers": "localhost:9092"}
 
         self._admin_client_config = admin_client_config
+
         self._admin_client = AdminClient(admin_client_config)
         log_level = "NOTSET" if not log_level else log_level
         self.logger = get_logger(log_level)

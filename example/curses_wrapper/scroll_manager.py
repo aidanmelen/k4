@@ -39,7 +39,7 @@ def main(stdscr):
     # Create bottom derived-window
     scroll_manager = ScrollManager()
     scroll_win = bottom_win.derwin(h - 2 , w - 4, 1, 2)
-    scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"], start_line=1, has_fixed_header_line=True)
+    scroll_manager.init(scroll_win, curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"], cursor_start_position=1, has_fixed_header_line=True)
 
     stdscr.refresh()
 
@@ -67,8 +67,8 @@ def main(stdscr):
 
         # Select the current item
         top_win.erase()
-        current_line = scroll_manager.select_line()
-        current_line_color_pair_id = scroll_manager.select_line_color_pair_id()
+        current_line = scroll_manager.select_item_line()
+        current_line_color_pair_id = scroll_manager.select_item_color_pair_id()
         top_win.addstr(4, max_x // 2 - len(current_line) // 2 , current_line, current_line_color_pair_id | curses.A_BOLD)
         top_win.refresh()
 

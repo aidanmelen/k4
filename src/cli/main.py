@@ -4,6 +4,7 @@ from .error import K4Error
 
 import click
 import curses
+import logging
 import yaml
 import os
 import traceback
@@ -47,6 +48,10 @@ def cli(bootstrap_servers, kafka_config, log_level):
     """A command-line client for Kafka."""
 
     log_level = log_level
+    logger = logging.getLogger()
+    logger.addHandler(logging.StreamHandler())
+
+    # kafka_admin_client_config = {"bootstrap.servers": bootstrap_servers, "logger": logger}
     kafka_admin_client_config = {"bootstrap.servers": bootstrap_servers}
 
     controller = Controller()

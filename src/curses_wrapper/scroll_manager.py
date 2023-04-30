@@ -7,7 +7,7 @@ class ScrollManager:
     DOWN = 1
     HEADER_LINE = 1
 
-    def init(self, window: curses.window, color_pair_id: int = 1, start_line: int = 0, has_fixed_header_line: bool = False) -> None:
+    def init(self, window: curses.window, color_pair_id: int = 1, cursor_start_position: int = 0, has_fixed_header_line: bool = False) -> None:
         """
         Initialize the screen window
         ┌--------------------------------------┐
@@ -52,7 +52,11 @@ class ScrollManager:
         self.bottom = len(self.__items)
 
         # Current highlighted line number (as window cursor)
-        self.current = start_line
+        if not hasattr(self, "current"):
+            self.current = cursor_start_position
+        else:
+            self.scroll(0)
+
 
     @property
     def items(self):
@@ -102,9 +106,12 @@ class ScrollManager:
 
     def paging(self, direction: int) -> None:
         """Paging the window when pressing left/right arrow keys"""
+
+        cursor_offset = 2 if self.has_fixed_header_line else 1
+
         # The last page may have fewer items than max lines,
         # so we should adjust the current cursor position as maximum item count on last page
-        self.current = min(self.current, self.bottom - self.top - 1)
+        self.current = min(self.current, self.bottom - self.top - cursor_offset)
 
         # Page up
         # top position can not be negative, so if top position is going to be negative, we should set it as 0
@@ -113,7 +120,7 @@ class ScrollManager:
         # Page down
         # top position should not be greater than the number of items, so we must restrict it
         elif direction == self.DOWN:
-            self.top += min(self.max_lines, self.bottom - self.top - 1)
+            self.top += min(self.max_lines, self.bottom - self.top - cursor_offset)
 
     def handle_input(self, ch: int) -> None:
         if ch == curses.KEY_UP:
@@ -124,12 +131,16 @@ class ScrollManager:
             self.paging(self.UP)
         elif ch == curses.KEY_RIGHT:
             self.paging(self.DOWN)
+    
+    def select_item(self):
+        """Return the line from the current item."""
+        return str(self.current_item)
 
-    def select_line(self):
+    def select_item_line(self):
         """Return the line from the current item."""
         return str(self.current_item.get("line"))
 
-    def select_line_color_pair_id(self):
+    def select_item_color_pair_id(self):
         """Return the line color pair id from the current item."""
         return int(self.current_item.get("color_pair_id", self.color_pair_id))
 
@@ -157,6 +168,9 @@ class ScrollManager:
                         spaces = " " * (self.max_x - len(header_line))
                         header_line += spaces
 
+                    # Ensure cursor is always on the window
+                    self.current = min(self.current, self.max_lines - 1) 
+
                     # Highlight the current cursor header line
                     if y == self.current == 0:
                         self.window.addnstr(y, 0, header_line, self.max_x, header_color_pair | curses.A_REVERSE | curses.A_BOLD)
@@ -179,7 +193,7 @@ class ScrollManager:
                     if y == self.current:
                         self.window.addnstr(y, 0, line, self.max_x, color_pair_id | curses.A_REVERSE | curses.A_BOLD)
                         self.current_item = item
-                    elif self.max_y > 0:
+                    elif self.max_lines > 0:
                         self.window.addnstr(y, 0, line, self.max_x, color_pair_id)
 
             except curses.error:
