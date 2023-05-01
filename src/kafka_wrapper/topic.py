@@ -34,7 +34,13 @@ class Topic(KafkaResource):
             results = [
                 t
                 for t in results
-                if not (t["name"].startswith("__") or t["name"].startswith("_confluent"))
+                if not (
+                    t["name"].startswith("__") or t["name"].startswith("_confluent") 
+                    or (t["name"].startswith("connect-") and t["name"].endswith("-offsets"))
+                    or (t["name"].startswith("connect-") and t["name"].endswith("-configs"))
+                    or (t["name"].startswith("connect-") and t["name"].endswith("-status"))
+                    or (t["name"] == "schemas")
+                )
             ]
 
         return results

@@ -99,6 +99,7 @@ class Controller:
         try:
             # Initialize home screen
             view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
+            model.update_input(view.input)
             model.refresh()
 
             while True:

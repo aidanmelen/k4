@@ -31,7 +31,6 @@ class BaseModel:
 
     def refresh_info(self) -> None:
         self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
-        # self.info = {"context": None, "cluster": "b1.adasdasdas.asdasdasdad.kafka.us-west-2.amazonaws.com:9096", "user": None}
 
     def refresh_namespaces(self) -> None:
         self.namespace = {}
@@ -59,7 +58,7 @@ class TopicModel(BaseModel):
         self.update_controls()
 
     def refresh_namespaces(self) -> None:
-        topics = self.client.list()
+        topics = self.client.list(show_internal=self.input.get("show_internal"))
         topic_names = [topic["name"] for topic in topics]
         top_namespaces = list(helper.get_top_prefixes(topic_names).keys())
         self.namespaces = dict(enumerate(top_namespaces))
@@ -72,7 +71,7 @@ class TopicModel(BaseModel):
         })
 
     def refresh_contents(self) -> None:
-        topics = self.client.list(show_internal=self.input.get("show_internal", True))
+        topics = self.client.list(show_internal=self.input.get("show_internal"))
         headers = ["TOPIC", "PARTITION"]
         lines = [[r["name"], r["partitions"]] for r in topics]
         self.contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
@@ -90,7 +89,7 @@ class ConsumerGroupModel(BaseModel):
     #     self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
 
     def refresh_namespaces(self) -> None:
-        groups = self.client.list(only_stable=True, only_high_level=True)
+        groups = self.client.list(only_stable=self.input.get("show_stable"), only_high_level=self.input.get("show_high_level"))
         group_ids = [group["id"] for group in groups]
         top_namespaces = list(helper.get_top_prefixes(group_ids).keys())
         self.namespaces = dict(enumerate(top_namespaces))
@@ -98,6 +97,8 @@ class ConsumerGroupModel(BaseModel):
     def update_controls(self) -> None:
         self.controls.update({
             "r": "Reset",
+            "s": "Show Stable",
+            "h": "Show High-Level",
         })
 
     def refresh_contents(self) -> None:

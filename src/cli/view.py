@@ -311,7 +311,9 @@ class BaseView:
 class TopicView(BaseView):
     def __init__(self, window):
         super().__init__(window)
-        self.show_internal = False
+        self.input = {
+            "show_internal": True
+        }
 
     def get_ch(self):
         ch = super().get_ch()
@@ -327,11 +329,8 @@ class TopicView(BaseView):
         elif ch == ord("e"):
             pass
         elif ch == ord("i"):
-            show_internal = not self.input.get("show_internal", True)
-            self.input = {
-                "show_internal": show_internal
-            }
-            self.window.addstr(self.max_y -1, self.max_x // 2, str(self.input.get("show_internal", True)))
+            show_internal = not self.input.get("show_internal")
+            self.input.update({"show_internal": show_internal})
         elif ch == ord("P"):
             pass
         elif ch == ord("?"):
@@ -343,3 +342,31 @@ class TopicView(BaseView):
 class ConsumerGroupView(BaseView):
     def __init__(self, window):
         super().__init__(window)
+        self.input = {
+            "show_high_level": True,
+            "show_stable": True
+        }
+    
+    def get_ch(self):
+        ch = super().get_ch()
+
+        if ch == ord("c"):
+            pass
+        # elif ch == 67: # shift-c
+        #     self.window.addstr(self.max_y -1, self.max_x // 2, 'shift-c')
+        elif ch == curses.ascii.EOT: # ctrl-d
+            self.window.addstr(self.max_y -1, self.max_x // 2, 'ctrl-d')
+        elif ch == ord("d"):
+            pass
+        elif ch == ord("e"):
+            pass
+        elif ch == ord("s"):
+            show_stable = not self.input.get("show_stable")
+            self.input.update({"show_stable": show_stable})
+        elif ch == ord("h"):
+            show_high_level = not self.input.get("show_high_level")
+            self.input.update({"show_high_level": show_high_level})
+        elif ch == ord("?"):
+            pass
+
+        return ch
