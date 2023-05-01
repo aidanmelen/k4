@@ -84,7 +84,7 @@ class Controller:
                 "ORANGE_RED",
                 "GRAY",
                 "LIGHT_SKY_BLUE",
-                "MAGENTA",
+                "FUCHSIA",
                 "MEDIUM_PURPLE",
                 "RED",
                 "STEEL_BLUE",

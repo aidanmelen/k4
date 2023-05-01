@@ -131,11 +131,11 @@ class BaseView:
                         namespaces_x,
                         key_str,
                         n,
-                        curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD,
+                        curses_color_pair["FUCHSIA_ON_BLACK"] | curses.A_BOLD,
                     )
 
                 # Format value
-                n = max_x - max_k - max_v - namespaces_x
+                n = max_x - max_k - namespaces_x - len(self.LOGO[0])
                 if n > 0:
                     self.top_win.addnstr(
                         y,
@@ -146,14 +146,14 @@ class BaseView:
                     )
 
             # shift next column
-            namespaces_x += max_k + len("<> ") + max_v + 1
+            namespaces_x += max_k + max_v + len(">  ")
 
         # Display controls
         controls_x = namespaces_x
         chunked_controls = helper.chunk_dict(model.get_sorted_controls())
         for controls in chunked_controls:
-            max_k = max(len(str(k)) + 1 for k in controls.keys())
-            max_v = max(len(str(v)) + 1 for v in controls.values())
+            max_k = max(len(str(k)) + len(" ") for k in controls.keys())
+            max_v = max(len(str(v)) + len(" ") for v in controls.values())
             for y, k in enumerate(itertools.islice(controls, self.bottom_y)):
 
                 # Format key
@@ -180,7 +180,7 @@ class BaseView:
                     )
 
             # shift next column
-            controls_x += max_k + len("<> ") + max_v + 1
+            controls_x += max_k + max_v + len(">  ")
 
         # Display Logo
         for y, line in enumerate(self.LOGO[: self.bottom_y]):
@@ -209,7 +209,7 @@ class BaseView:
                 0, center_x, banner_1, curses_color_pair["CYAN_ON_BLACK"] | curses.A_BOLD
             )
             self.middle_win.addstr(banner_2, curses_color_pair["CYAN_ON_BLACK"])
-            self.middle_win.addstr(banner_3, curses_color_pair["MAGENTA_ON_BLACK"] | curses.A_BOLD)
+            self.middle_win.addstr(banner_3, curses_color_pair["FUCHSIA_ON_BLACK"] | curses.A_BOLD)
             self.middle_win.addstr(banner_4, curses_color_pair["CYAN_ON_BLACK"])
             self.middle_win.addstr(banner_5, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
             self.middle_win.addstr(banner_6, curses_color_pair["CYAN_ON_BLACK"])

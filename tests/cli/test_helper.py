@@ -32,3 +32,20 @@ def test_helper_get_top_prefixes_with_empty_input():
     expected_result = {}
     result = helper.get_top_prefixes(topic_names)
     assert result == expected_result
+
+def test_shorten():
+    # Test case 1: text is shorter than width
+    text = 'short'
+    width = 10
+    assert helper.shorten(text, width) == text
+    
+    # Test case 2: text is longer than width and placeholder is shorter
+    text = 'this is a long text'
+    width = 10
+    assert helper.shorten(text, width) == 'this is...'
+    
+    # Test case 3: text is longer than width and placeholder is longer
+    text = 'this is a long text'
+    width = 10
+    placeholder = '…'
+    assert helper.shorten(text, width, placeholder) == 'this is a…'
