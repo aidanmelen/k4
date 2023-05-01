@@ -99,10 +99,10 @@ class Controller:
         try:
             # Initialize home screen
             view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
-            model.refresh(wait_seconds=0)
+            model.refresh()
 
             while True:
-                model.refresh()
+                model.refresh(wait_seconds=10)
                 view.display(model)
 
                 line = view.select_item_line().split(" ")[0]
@@ -110,13 +110,18 @@ class Controller:
                 # Handle user input
                 ch = view.get_ch()
 
+                # Update model based on user input
+                if view.has_input_changed():
+                    model.update_input(view.input)
+                    model.refresh()
+
                 # Handle user command
                 if ch == ord(":"):
                     command = view.get_command(model)
                     self.navigation.navigate(command)
                     
                     view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
-                    model.refresh(wait_seconds=0)
+                    model.refresh()
 
                     if command == "quit" or command in self.navigation.aliases["quit"]:
                         break
@@ -124,6 +129,8 @@ class Controller:
                 # Handle screen resize
                 elif ch == curses.KEY_RESIZE:
                     view.handle_resize()
+
+                
 
         except KeyboardInterrupt:
             pass

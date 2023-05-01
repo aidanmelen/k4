@@ -32,6 +32,13 @@ class BaseView:
 
         self.handle_resize()
 
+        # User input
+        self.input = {}
+        self._last_input = self.input
+
+    def has_input_changed(self) -> bool:
+        return self._last_input != self.input
+
     def handle_resize(self):
         self.window.clear()
 
@@ -238,7 +245,7 @@ class BaseView:
                         "color_pair_id": curses_color_pair["LIGHT_SKY_BLUE_ON_BLACK"],
                     }
                     scroll_manager_items.append(item)
-
+            
             self.scroll_manager.items = scroll_manager_items
             self.scroll_manager.display()
 
@@ -319,12 +326,15 @@ class TopicView(BaseView):
             pass
         elif ch == ord("e"):
             pass
-        elif ch == ord("?"):
-            pass
         elif ch == ord("i"):
-            self.show_internal = not self.show_internal
-            self.window.addstr(self.max_y -1, self.max_x // 2, 'i')
+            show_internal = not self.input.get("show_internal", True)
+            self.input = {
+                "show_internal": show_internal
+            }
+            self.window.addstr(self.max_y -1, self.max_x // 2, str(self.input.get("show_internal", True)))
         elif ch == ord("P"):
+            pass
+        elif ch == ord("?"):
             pass
 
         return ch

@@ -24,6 +24,10 @@ class BaseModel:
         self.contents = []
         self.client = None
         self.timer = Timer()
+        self.input = {}
+
+    def update_input(self, data: Dict[str, str]) -> None:
+        self.input = data
 
     def refresh_info(self) -> None:
         self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
@@ -39,7 +43,7 @@ class BaseModel:
     def refresh_contents(self) -> None:
         self.contents = []
 
-    def refresh(self, wait_seconds: int = 10) -> None:
+    def refresh(self, wait_seconds: int = 0) -> None:
         if self.timer.has_elapsed(seconds = wait_seconds):
             self.refresh_info()
             self.refresh_namespaces()
@@ -68,7 +72,7 @@ class TopicModel(BaseModel):
         })
 
     def refresh_contents(self) -> None:
-        topics = self.client.list()
+        topics = self.client.list(show_internal=self.input.get("show_internal", True))
         headers = ["TOPIC", "PARTITION"]
         lines = [[r["name"], r["partitions"]] for r in topics]
         self.contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
