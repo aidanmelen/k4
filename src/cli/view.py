@@ -416,7 +416,7 @@ class ConsumerGroupView(BaseView):
 
             elif int(k) == int(self.input["namespace"]):
                 namespace = ns
-                return [header] + [line for line in tabulated_lines if ns in line]
+                return [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
         else:
             return tabulated_lines
     
