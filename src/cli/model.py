@@ -1,5 +1,4 @@
 from typing import List, Dict, Any
-from tabulate import tabulate
 from kafka_wrapper.topic import Topic
 from kafka_wrapper.consumer_group import ConsumerGroup
 from .timer import Timer
@@ -71,11 +70,7 @@ class TopicModel(BaseModel):
         })
 
     def refresh_contents(self) -> None:
-        topics = self.client.list(show_internal=self.input.get("show_internal"))
-        headers = ["TOPIC", "PARTITION"]
-        lines = [[r["name"], r["partitions"]] for r in topics]
-        self.contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
-
+        self.contents = self.client.list(show_internal=self.input.get("show_internal"))
 
 class ConsumerGroupModel(BaseModel):
     def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10) -> None:
@@ -89,7 +84,10 @@ class ConsumerGroupModel(BaseModel):
     #     self.info = {"context": None, "cluster": self.bootstrap_servers, "user": None}
 
     def refresh_namespaces(self) -> None:
-        groups = self.client.list(only_stable=self.input.get("show_stable"), only_high_level=self.input.get("show_high_level"))
+        groups = self.client.list(
+            only_stable=self.input.get("show_stable"),
+            only_high_level=self.input.get("show_high_level")
+        )
         group_ids = [group["id"] for group in groups]
         top_namespaces = ["all"] + list(helper.get_top_prefixes(group_ids).keys())
         self.namespaces = dict(enumerate(top_namespaces))
@@ -102,34 +100,10 @@ class ConsumerGroupModel(BaseModel):
         })
 
     def refresh_contents(self) -> None:
-        headers = [
-            "GROUP",
-            "TOPIC",
-            "PARTITION",
-            "CURRENT-OFFSET",
-            "LOG-END-OFFSET",
-            "LAG",
-            "STATUS"
-            # "CONSUMER-ID",
-            # "HOST",
-            # "CLIENT-ID",
+        group_ids = [
+            g["id"] for g in self.client.list(
+                only_stable=not self.input.get("show_stable"),
+                only_high_level=not self.input.get("show_high_level")
+            )
         ]
-        lines = []
-        for group, metadata in self.client.describe().items():
-            for m in metadata.get("members", []):
-                for a in m.get("assignments", []):
-                    lines.append(
-                        [
-                            group,
-                            a["topic"],
-                            a["partition"],
-                            a["current_offset"],
-                            a["log_end_offset"],
-                            a["lag"],
-                            "Running" if all([m["id"], m["host"], m["client_id"]]) else "Stopped"
-                            # m["id"],
-                            # m["host"],
-                            # m["client_id"],
-                        ]
-                    )
-        self.contents = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
+        self.contents = self.client.describe(group_ids=group_ids)

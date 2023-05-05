@@ -104,7 +104,7 @@ class Controller:
             asyncio.run(model.refresh())
 
             while True:
-                asyncio.run(model.refresh(wait_seconds=5))
+                asyncio.run(model.refresh(wait_seconds=10))
                 view.display(model)
 
                 line = view.select_item_line().split(" ")[0]
@@ -125,7 +125,9 @@ class Controller:
                 
                 # Handle user controls
                 elif ch in [ord(k[-1]) for k in model.controls.keys()]:
+                    view.top_win.erase()
                     model.update_input(view.input)
+                    view.display(model)
                     asyncio.run(model.refresh())
 
                 # Handle screen resize

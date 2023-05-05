@@ -6,7 +6,7 @@ prefix="my-topic-"
 num_topics=1000
 
 topics=()
-for i in $(seq 1 $num_topics)
+for i in $(seq 10 $num_topics)
 do
   topic="${prefix}${i}"
   topics+=("$topic")
