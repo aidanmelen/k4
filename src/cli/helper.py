@@ -32,13 +32,13 @@ def chunk_dict(d: Dict[str, str], chunk_size=6):
     return chunks
 
 
-def get_top_prefixes(names: List[str], max_keys: int = 10) -> Dict[str, int]:
+def get_top_prefixes(names: List[str], max_keys: int = 9) -> Dict[str, int]:
     """
     Given a list of names, returns a dictionary of the most common prefixes and their counts.
 
     Args:
         names (List[str]): A list of topic names.
-        max_keys (int, optional): The maximum number of top prefixes to return. Defaults to 10.
+        max_keys (int, optional): The maximum number of top prefixes to return. Defaults to 9.
 
     Returns:
         Dict[str, int]: A dictionary of the most common topic prefixes and their counts.

@@ -312,18 +312,21 @@ class TopicView(BaseView):
     def __init__(self, window):
         super().__init__(window)
         self.input = {
+            "namespace": "all",
             "show_internal": True
         }
 
     def get_ch(self):
         ch = super().get_ch()
 
-        if ch == ord("c"):
+        if ch in range(48, 58): # 0-9
+            self.window.addstr(self.max_y - 1, self.max_x // 2, chr(ch))
+        elif ch == ord("c"):
             pass
-        elif ch == 67: # shift-c
-            self.window.addstr(self.max_y -1, self.max_x // 2, 'shift-c')
+        elif ch == ord("C"): # shift-c
+            self.window.addstr(self.max_y -1, self.max_x // 2, chr(ch))
         elif ch == curses.ascii.EOT: # ctrl-d
-            self.window.addstr(self.max_y -1, self.max_x // 2, 'ctrl-d')
+            self.window.addstr(self.max_y -1, self.max_x // 2, chr(ch))
         elif ch == ord("d"):
             pass
         elif ch == ord("e"):
@@ -335,7 +338,7 @@ class TopicView(BaseView):
             pass
         elif ch == ord("?"):
             pass
-
+        
         return ch
 
 
@@ -343,6 +346,7 @@ class ConsumerGroupView(BaseView):
     def __init__(self, window):
         super().__init__(window)
         self.input = {
+            "namespace": "all",
             "show_high_level": True,
             "show_stable": True
         }
@@ -350,9 +354,11 @@ class ConsumerGroupView(BaseView):
     def get_ch(self):
         ch = super().get_ch()
 
-        if ch == ord("c"):
+        if ch in range(48, 58): # 0-9
+            self.window.addstr(self.max_y - 1, self.max_x // 2, chr(ch))
+        elif ch == ord("c"):
             pass
-        # elif ch == 67: # shift-c
+        # elif ch == ord("C"): # shift-c
         #     self.window.addstr(self.max_y -1, self.max_x // 2, 'shift-c')
         elif ch == curses.ascii.EOT: # ctrl-d
             self.window.addstr(self.max_y -1, self.max_x // 2, 'ctrl-d')

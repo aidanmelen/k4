@@ -6,7 +6,9 @@ FROM python:${PYTHON_VERSION} AS release
 ENV TERM=xterm-256color
 RUN pip install --upgrade pip \
     && pip install poetry${POETRY_VERSION+==$POETRY_VERSION} \
-    && apt-get update && apt-get install vim jq -y
+    && wget https://dlcdn.apache.org/kafka/3.4.0/kafka_2.13-3.4.0.tgz \
+    && tar -xzf kafka_2.13-3.4.0.tgz -C /usr/local/bin/ \
+    && apt-get update && apt-get install vim jq default-jdk -y
 WORKDIR /app
 RUN mkdir -p /app
 COPY . .

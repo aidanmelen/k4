@@ -5,6 +5,7 @@ from .model import *
 from .view import *
 from .error import K4Error
 
+import asyncio
 import curses
 import time
 
@@ -100,10 +101,10 @@ class Controller:
             # Initialize home screen
             view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
             model.update_input(view.input)
-            model.refresh()
+            asyncio.run(model.refresh())
 
             while True:
-                model.refresh(wait_seconds=10)
+                asyncio.run(model.refresh(wait_seconds=5))
                 view.display(model)
 
                 line = view.select_item_line().split(" ")[0]
@@ -111,27 +112,25 @@ class Controller:
                 # Handle user input
                 ch = view.get_ch()
 
-                # Update model based on user input
-                if view.has_input_changed():
-                    model.update_input(view.input)
-                    model.refresh()
-
                 # Handle user command
                 if ch == ord(":"):
                     command = view.get_command(model)
                     self.navigation.navigate(command)
                     
                     view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
-                    model.refresh()
+                    asyncio.run(model.refresh())
 
                     if command == "quit" or command in self.navigation.aliases["quit"]:
                         break
+                
+                # Handle user controls
+                elif ch in [ord(k[-1]) for k in model.controls.keys()]:
+                    model.update_input(view.input)
+                    asyncio.run(model.refresh())
 
                 # Handle screen resize
                 elif ch == curses.KEY_RESIZE:
                     view.handle_resize()
-
-                
 
         except KeyboardInterrupt:
             pass

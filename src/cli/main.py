@@ -1,4 +1,5 @@
 from confluent_kafka.admin import AdminClient
+from confluent_kafka import KafkaError
 from .controller import Controller
 from .error import K4Error
 
@@ -62,7 +63,7 @@ def cli(bootstrap_servers, kafka_config, log_level):
         click.echo(click.style("\n".join(err.LOGO), fg="red", bold=True))
         click.echo("\n" + click.style(str(err) + "\n", bold=True))
 
-        # Then display the traceback
+        # Display the traceback for all other errors
         raise err.error
         traceback.print_tb(err.error.__traceback__)
         click.echo(err.traceback)

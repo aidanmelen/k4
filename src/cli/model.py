@@ -42,7 +42,7 @@ class BaseModel:
     def refresh_contents(self) -> None:
         self.contents = []
 
-    def refresh(self, wait_seconds: int = 0) -> None:
+    async def refresh(self, wait_seconds: int = 0) -> None:
         if self.timer.has_elapsed(seconds = wait_seconds):
             self.refresh_info()
             self.refresh_namespaces()
@@ -60,7 +60,7 @@ class TopicModel(BaseModel):
     def refresh_namespaces(self) -> None:
         topics = self.client.list(show_internal=self.input.get("show_internal"))
         topic_names = [topic["name"] for topic in topics]
-        top_namespaces = list(helper.get_top_prefixes(topic_names).keys())
+        top_namespaces = ["all"] + list(helper.get_top_prefixes(topic_names).keys())
         self.namespaces = dict(enumerate(top_namespaces))
 
     def update_controls(self) -> None:
@@ -91,7 +91,7 @@ class ConsumerGroupModel(BaseModel):
     def refresh_namespaces(self) -> None:
         groups = self.client.list(only_stable=self.input.get("show_stable"), only_high_level=self.input.get("show_high_level"))
         group_ids = [group["id"] for group in groups]
-        top_namespaces = list(helper.get_top_prefixes(group_ids).keys())
+        top_namespaces = ["all"] + list(helper.get_top_prefixes(group_ids).keys())
         self.namespaces = dict(enumerate(top_namespaces))
 
     def update_controls(self) -> None:
