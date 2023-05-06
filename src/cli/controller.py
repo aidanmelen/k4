@@ -101,10 +101,10 @@ class Controller:
             # Initialize home screen
             view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
             model.update_input(view.input)
-            asyncio.run(model.refresh())
+            model.refresh()
 
             while True:
-                asyncio.run(model.refresh(wait_seconds=10))
+                model.refresh(wait_seconds=100)
                 view.display(model)
 
                 line = view.select_item_line().split(" ")[0]
@@ -118,7 +118,7 @@ class Controller:
                     self.navigation.navigate(command)
                     
                     view, model = self.navigation.get_current_focus(self.screen, kafka_admin_client_config)
-                    asyncio.run(model.refresh())
+                    model.refresh()
 
                     if command == "quit" or command in self.navigation.aliases["quit"]:
                         break

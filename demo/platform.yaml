@@ -76,6 +76,67 @@ spec:
     segment.bytes: 1073741824
 
 ---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: producer-example
+  namespace: kafka  
+spec:
+  template:
+    metadata:
+      name: producer-example
+    spec:
+      containers:
+        - name: job
+          image: confluentinc/cp-kafka
+          command: 
+            - /bin/sh
+            - -c
+            - |
+              kafka-producer-perf-test --topic test-topic.1 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
+              kafka-producer-perf-test --topic test-topic.2 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
+              kafka-producer-perf-test --topic test-topic.3 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
+      restartPolicy: OnFailure
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: producer-example
+  namespace: kafka  
+spec:
+  template:
+    metadata:
+      name: producer-example
+    spec:
+      containers:
+        - name: job
+          image: confluentinc/cp-kafka
+          command: 
+            - /bin/sh
+            - -c
+            - |
+              kafka-producer-perf-test --topic test-topic.1 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
+              kafka-producer-perf-test --topic test-topic.2 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
+              kafka-producer-perf-test --topic test-topic.3 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
+      restartPolicy: OnFailure
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: consumer-example
+  namespace: kafka
+spec:
+  containers:
+  - name: consumer
+    image: confluentinc/cp-kafka
+    command:
+      - /bin/sh
+      - -c
+      - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --whitelist "test-topic.*" --group test-group --from-beginning
+
+---
 apiVersion: v1
 kind: Pod
 metadata:

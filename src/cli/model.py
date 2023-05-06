@@ -41,7 +41,7 @@ class BaseModel:
     def refresh_contents(self) -> None:
         self.contents = []
 
-    async def refresh(self, wait_seconds: int = 0) -> None:
+    def refresh(self, wait_seconds: int = 0) -> None:
         if self.timer.has_elapsed(seconds = wait_seconds):
             self.refresh_info()
             self.refresh_namespaces()
