@@ -1,4 +1,3 @@
-from tabulate import tabulate
 from .color import curses_color_pair
 from curses_wrapper import ScrollManager, textbox
 from .timer import Timer
@@ -36,9 +35,6 @@ class BaseView:
         # User input
         self.input = {}
         self._last_input = self.input
-
-    def has_input_changed(self) -> bool:
-        return self._last_input != self.input
 
     def handle_resize(self):
         self.window.clear()
@@ -199,13 +195,13 @@ class BaseView:
             self.top_win.addnstr(
                 y, x, line, max_x, curses_color_pair["ORANGE_ON_BLACK"] | curses.A_BOLD
             )
-        self.top_win.refresh()
 
     def display_middle_win(self, model):
         if not self.middle_win:
             return
 
         # box in case the banner length changes
+        self.middle_win.erase()
         self.middle_win.box()
 
         # Display banner
@@ -228,15 +224,14 @@ class BaseView:
             self.middle_win.addstr(banner_4, curses_color_pair["CYAN_ON_BLACK"])
             self.middle_win.addstr(banner_5, curses_color_pair["WHITE_ON_BLACK"] | curses.A_BOLD)
             self.middle_win.addstr(banner_6, curses_color_pair["CYAN_ON_BLACK"])
-
-            # Ensure banner is drawn above of window box
-            self.middle_win.refresh()
+        
+        self.middle_win.refresh()
 
     def display_middle_scroll_win(self, model):
         if self.middle_scroll_win:
 
             scroll_manager_items = []
-            for y, line in enumerate(self.render(model)):
+            for y, line in enumerate(model.contents):
 
                 # Colorize header line
                 if y == 0:
@@ -269,6 +264,9 @@ class BaseView:
         self.display_middle_win(model)
         self.display_middle_scroll_win(model)
         self.display_bottom_win(model)
+        self.top_win.refresh()
+        self.window.refresh()
+
 
     def select_item_line(self):
        return self.scroll_manager.select_item_line()
@@ -324,23 +322,6 @@ class TopicView(BaseView):
             "show_internal": False
         }
 
-    def render(self, model):
-        headers = ["TOPIC", "PARTITION"]
-        lines = [[item["name"], item["partitions"]] for item in model.contents]
-        tabulated_lines = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
-        header = tabulated_lines[0]
-
-        
-        for k, ns in model.namespaces.items():
-            if int(self.input["namespace"]) == 0:
-                return tabulated_lines
-
-            elif int(k) == int(self.input["namespace"]):
-                namespace = ns
-                return [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
-        else:
-            return tabulated_lines
-
     def get_ch(self):
         ch = super().get_ch()
 
@@ -375,50 +356,6 @@ class ConsumerGroupView(BaseView):
             "show_high_level": True,
             "show_stable": True
         }
-    
-    def render(self, model):
-        headers = [
-            "GROUP",
-            "TOPIC",
-            "PARTITION",
-            "CURRENT-OFFSET",
-            "LOG-END-OFFSET",
-            "LAG",
-            "STATUS"
-            # "CONSUMER-ID",
-            # "HOST",
-            # "CLIENT-ID",
-        ]
-        lines = []
-        for group, metadata in model.contents.items():
-            for m in metadata.get("members", []):
-                for a in m.get("assignments", []):
-                    lines.append(
-                        [
-                            group,
-                            a["topic"],
-                            a["partition"],
-                            a["current_offset"],
-                            a["log_end_offset"],
-                            a["lag"],
-                            "Running" if all([m["id"], m["host"], m["client_id"]]) else "Stopped"
-                            # m["id"],
-                            # m["host"],
-                            # m["client_id"],
-                        ]
-                    )
-        tabulated_lines = tabulate(lines, headers=headers, tablefmt="plain", numalign="left", stralign="left").splitlines()
-        header = tabulated_lines[0]
-
-        for k, ns in model.namespaces.items():
-            if int(self.input["namespace"]) == 0:
-                return tabulated_lines
-
-            elif int(k) == int(self.input["namespace"]):
-                namespace = ns
-                return [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
-        else:
-            return tabulated_lines
     
     def get_ch(self):
         ch = super().get_ch()
