@@ -79,9 +79,9 @@ class TopicModel(BaseModel):
 
         for k, ns in self.namespaces.items():
             if int(self.input["namespace"]) == 0:
-                self.contents = tabulated_lines
+                self.contents = [header] + sorted(tabulated_lines[1:])
             elif int(k) == int(self.input["namespace"]):
-                self.contents = [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
+                self.contents = [header] + sorted([line for line in tabulated_lines if line.lower().startswith(ns) or line.lower().startswith(f"_{ns}") or line.lower().startswith(f"__{ns}")])
 
 class ConsumerGroupModel(BaseModel):
     def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10) -> None:
@@ -122,6 +122,6 @@ class ConsumerGroupModel(BaseModel):
 
         for k, ns in self.namespaces.items():
             if int(self.input["namespace"]) == 0:
-                self.contents = tabulated_lines
+                self.contents = [header] + sorted(tabulated_lines[1:])
             elif int(k) == int(self.input["namespace"]):
-                self.contents = [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
+                self.contents = [header] + sorted([line for line in tabulated_lines if line.lower().startswith(ns) or line.lower().startswith(f"_{ns}") or line.lower().startswith(f"__{ns}")])

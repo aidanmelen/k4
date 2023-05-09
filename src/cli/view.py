@@ -232,7 +232,7 @@ class BaseView:
         if self.middle_scroll_win:
 
             scroll_manager_items = []
-            for y, line in enumerate(sorted(model.contents)):
+            for y, line in enumerate(model.contents):
 
                 # Colorize header line
                 if y == 0:
