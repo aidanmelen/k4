@@ -36,7 +36,7 @@ class ConsumerGroup(KafkaResource):
 
         return result
 
-    def list(self, only_stable=False, only_high_level=False, topics=[]):
+    def list(self, topics=[], show_empty=False, show_simple=False):
         """
         List Kafka Consumer Groups.
         """
@@ -44,7 +44,7 @@ class ConsumerGroup(KafkaResource):
 
         states.add(ConsumerGroupState.STABLE)
 
-        if not only_stable:
+        if show_empty:
             states.add(ConsumerGroupState.EMPTY)
 
         future = self._admin_client.list_consumer_groups(
@@ -55,10 +55,10 @@ class ConsumerGroup(KafkaResource):
         consumer_groups = []
         for group in groups.valid:
 
-            if topics and not self.has_any_topic_assignments(group.group_id, topics):
-                continue
+            # if topics and not self.has_any_topic_assignments(group.group_id, topics):
+            #     continue
 
-            if only_high_level and group.is_simple_consumer_group:
+            if not show_simple and group.is_simple_consumer_group:
                 continue
 
             consumer_groups.append(
@@ -167,12 +167,12 @@ class ConsumerGroup(KafkaResource):
 
         return result
 
-    def describe(self, group_ids=[], include_offset_lag=True):
+    def describe(self, group_ids=[], include_offset_lag=True, show_empty=False):
         results = {}
 
         # Default to listing all group ids
         if not group_ids:
-            group_ids = [group["id"] for group in self.list()]
+            group_ids = [group["id"] for group in self.list(show_empty=show_empty)]
 
         # There are no group ids on the cluster
         if not group_ids:
@@ -187,50 +187,63 @@ class ConsumerGroup(KafkaResource):
         for group_id, f in future.items():
             group_metadata = f.result()
             members = []
-            for m in group_metadata.members:
 
-                topic_partitions = []
-                offsets = []
-                if m.assignment:
-
-                    for tp in m.assignment.topic_partitions:
-
-                        if include_offset_lag:
-                            #
-                            offsets = self.get_offset_lag([tp])
-                        else:
-                            offsets = {}
-
-                        current_offset = (
-                            offsets.get(tp.topic, {})
-                            .get(tp.partition, {})
-                            .get("current_offset", "-")
-                        )
-                        log_end_offset = (
-                            offsets.get(tp.topic, {})
-                            .get(tp.partition, {})
-                            .get("log_end_offset", "-")
-                        )
-                        lag = offsets.get(tp.topic, {}).get(tp.partition, {}).get("lag", "-")
-
-                        topic_partitions.append(
-                            {
-                                "topic": tp.topic,
-                                "partition": tp.partition,
-                                "current_offset": current_offset,
-                                "log_end_offset": log_end_offset,
-                                "lag": lag,
-                            }
-                        )
-
+            if not group_metadata.members:
+                # Group is empty
                 member = {
-                    "id": m.member_id,
-                    "host": m.host,
-                    "client_id": m.client_id,
-                    "group_instance_id": m.group_instance_id,
-                    "assignments": topic_partitions,
+                    "id": group_id,
+                    "host": "-",
+                    "client_id": "-",
+                    "group_instance_id": "-",
+                    "assignments": [],
                 }
                 members.append(member)
+            else:
+                for m in group_metadata.members:
+
+                    topic_partitions = []
+                    offsets = []
+                    if m.assignment:
+
+                        for tp in m.assignment.topic_partitions:
+
+                            if include_offset_lag:
+                                #
+                                offsets = self.get_offset_lag([tp])
+                            else:
+                                offsets = {}
+
+                            current_offset = (
+                                offsets.get(tp.topic, {})
+                                .get(tp.partition, {})
+                                .get("current_offset", "-")
+                            )
+                            log_end_offset = (
+                                offsets.get(tp.topic, {})
+                                .get(tp.partition, {})
+                                .get("log_end_offset", "-")
+                            )
+                            lag = offsets.get(tp.topic, {}).get(tp.partition, {}).get("lag", "-")
+
+                            topic_partitions.append(
+                                {
+                                    "topic": tp.topic,
+                                    "partition": tp.partition,
+                                    "current_offset": current_offset,
+                                    "log_end_offset": log_end_offset,
+                                    "lag": lag,
+                                }
+                            )
+
+                    member = {
+                        "id": m.member_id,
+                        "host": m.host,
+                        "client_id": m.client_id,
+                        "group_instance_id": m.group_instance_id,
+                        "assignments": topic_partitions,
+                    }
+                    members.append(member)
+                
 
             results[group_id] = {
                 "is_simple_consumer_group": group_metadata.is_simple_consumer_group,

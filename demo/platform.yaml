@@ -76,65 +76,97 @@ spec:
     segment.bytes: 1073741824
 
 ---
-apiVersion: batch/v1
-kind: Job
+apiVersion: v1
+kind: Pod
 metadata:
   name: producer-example
   namespace: kafka  
 spec:
-  template:
-    metadata:
-      name: producer-example
-    spec:
-      containers:
-        - name: job
-          image: confluentinc/cp-kafka
-          command: 
-            - /bin/sh
-            - -c
-            - |
-              kafka-producer-perf-test --topic test-topic.1 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
-              kafka-producer-perf-test --topic test-topic.2 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
-              kafka-producer-perf-test --topic test-topic.3 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
-      restartPolicy: OnFailure
-
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: producer-example
-  namespace: kafka  
-spec:
-  template:
-    metadata:
-      name: producer-example
-    spec:
-      containers:
-        - name: job
-          image: confluentinc/cp-kafka
-          command: 
-            - /bin/sh
-            - -c
-            - |
-              kafka-producer-perf-test --topic test-topic.1 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
-              kafka-producer-perf-test --topic test-topic.2 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092 &&
-              kafka-producer-perf-test --topic test-topic.3 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
-      restartPolicy: OnFailure
+  containers:
+    - name: t1-producer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-producer-perf-test --topic test-topic.1 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
+    - name: t2-producer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-producer-perf-test --topic test-topic.2 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
+    - name: t3-producer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-producer-perf-test --topic test-topic.3 --num-records 100 --record-size 10 --throughput 10 --producer-props bootstrap.servers=my-cluster-kafka-bootstrap:9092
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: consumer-example
-  namespace: kafka
+  name: consumer-high-level-example
+  namespace: kafka  
 spec:
   containers:
-  - name: consumer
-    image: confluentinc/cp-kafka
-    command:
-      - /bin/sh
-      - -c
-      - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --whitelist "test-topic.*" --group test-group --from-beginning
+    - name: t1-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.1" --group test-group-t1 --from-beginning
+    - name: t2-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.2" --group test-group-t2 --from-beginning
+    - name: t4-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.3" --group test-group-t3 --from-beginning
+    - name: t123-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --whitelist "test-topic.*" --group test-group-all --from-beginning
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: consumer-simple-example
+  namespace: kafka  
+spec:
+  containers:
+    - name: t1-simple-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.1" --from-beginning
+    - name: t2-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.2" --from-beginning
+    - name: t4-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic "test-topic.3" --from-beginning
+    - name: t123-consumer
+      image: confluentinc/cp-kafka
+      command: 
+        - /bin/sh
+        - -c
+        - kafka-console-consumer --bootstrap-server my-cluster-kafka-bootstrap:9092 --whitelist "test-topic.*" --group test-group-all --from-beginning
 
 ---
 apiVersion: v1

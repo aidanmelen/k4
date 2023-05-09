@@ -72,21 +72,16 @@ class TopicModel(BaseModel):
 
     def refresh_contents(self) -> None:
         topics = self.client.list(show_internal=self.input.get("show_internal"))
-        headers = ["TOPIC", "PARTITION"]
+        headers = ["TOPIC", "PARTITIONS"]
         lines = [[topic["name"], topic["partitions"]] for topic in topics]
-        tabulated_lines = tabulate(lines, headers=headers, tablefmt="plain", numalign="left").splitlines()
+        tabulated_lines = tabulate(lines, headers=headers, tablefmt="plain", numalign="left", stralign="left").splitlines()
         header = tabulated_lines[0]
 
         for k, ns in self.namespaces.items():
             if int(self.input["namespace"]) == 0:
                 self.contents = tabulated_lines
-
             elif int(k) == int(self.input["namespace"]):
                 self.contents = [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
-            # else:
-            #     self.contents = tabulated_lines
-        # else:
-        #     self.contents = tabulated_lines
 
 class ConsumerGroupModel(BaseModel):
     def __init__(self, admin_client_config: Dict[str, str], timeout: int = 10) -> None:
@@ -101,8 +96,8 @@ class ConsumerGroupModel(BaseModel):
 
     def refresh_namespaces(self) -> None:
         groups = self.client.list(
-            only_stable=self.input.get("show_stable"),
-            only_high_level=self.input.get("show_high_level")
+            show_empty=self.input.get("show_empty"),
+            show_simple=self.input.get("show_simple")
         )
         group_ids = [group["id"] for group in groups]
         top_namespaces = ["all"] + list(helper.get_top_prefixes(group_ids).keys())
@@ -111,57 +106,22 @@ class ConsumerGroupModel(BaseModel):
     def update_controls(self) -> None:
         self.controls.update({
             "r": "Reset",
-            "s": "Show Stable",
-            "h": "Show High-Level",
+            "shift-e": "Show Empty",
+            "s": "Show Simple",
         })
 
     def refresh_contents(self) -> None:
-        group_ids = [
-            g["id"] for g in self.client.list(
-                only_stable=not self.input.get("show_stable"),
-                only_high_level=not self.input.get("show_high_level")
-            )
-        ]
-        
-        headers = [
-            "GROUP",
-            "TOPIC",
-            "PARTITION",
-            "CURRENT-OFFSET",
-            "LOG-END-OFFSET",
-            "LAG",
-            "STATUS"
-            # "CONSUMER-ID",
-            # "HOST",
-            # "CLIENT-ID",
-        ]
-        lines = []
-        for group, metadata in self.client.describe(group_ids=group_ids).items():
-            for m in metadata.get("members", []):
-                for a in m.get("assignments", []):
-                    lines.append(
-                        [
-                            group,
-                            a["topic"],
-                            a["partition"],
-                            a["current_offset"],
-                            a["log_end_offset"],
-                            a["lag"],
-                            "Running" if all([m["id"], m["host"], m["client_id"]]) else "Stopped"
-                            # m["id"],
-                            # m["host"],
-                            # m["client_id"],
-                        ]
-                    )
+        groups = self.client.list(
+            show_empty=self.input.get("show_empty"),
+            show_simple=self.input.get("show_simple")
+        )
+        headers = ["ID", "TYPE", "STATE"]
+        lines = [[g["id"], g["type"].upper(), g["state"]] for g in groups]
         tabulated_lines = tabulate(lines, headers=headers, tablefmt="plain", numalign="left", stralign="left").splitlines()
         header = tabulated_lines[0]
 
         for k, ns in self.namespaces.items():
             if int(self.input["namespace"]) == 0:
                 self.contents = tabulated_lines
-
             elif int(k) == int(self.input["namespace"]):
                 self.contents = [header] + [line for line in tabulated_lines if line.startswith(ns) or line.startswith(f"_{ns}") or line.startswith(f"__{ns}")]
-        # else:
-        #     self.contents = tabulated_lines
-        

@@ -6,7 +6,7 @@ from . import helper
 import curses
 import curses.textpad
 import itertools
-import textwrap
+import json
 
 
 class BaseView:
@@ -196,12 +196,13 @@ class BaseView:
                 y, x, line, max_x, curses_color_pair["ORANGE_ON_BLACK"] | curses.A_BOLD
             )
 
+        self.top_win.refresh()
+
     def display_middle_win(self, model):
         if not self.middle_win:
             return
 
         # box in case the banner length changes
-        self.middle_win.erase()
         self.middle_win.box()
 
         # Display banner
@@ -231,7 +232,7 @@ class BaseView:
         if self.middle_scroll_win:
 
             scroll_manager_items = []
-            for y, line in enumerate(model.contents):
+            for y, line in enumerate(sorted(model.contents)):
 
                 # Colorize header line
                 if y == 0:
@@ -264,7 +265,6 @@ class BaseView:
         self.display_middle_win(model)
         self.display_middle_scroll_win(model)
         self.display_bottom_win(model)
-        self.top_win.refresh()
         self.window.refresh()
 
 
@@ -345,6 +345,8 @@ class TopicView(BaseView):
         elif ch == ord("?"):
             pass
         
+        self.window.addstr(self.max_y-1, self.max_x // 2, str(json.dumps(self.input["namespace"])))
+        
         return ch
 
 
@@ -353,8 +355,8 @@ class ConsumerGroupView(BaseView):
         super().__init__(window)
         self.input = {
             "namespace": 0,
-            "show_high_level": True,
-            "show_stable": True
+            "show_empty": False,
+            "show_simple": False
         }
     
     def get_ch(self):
@@ -364,23 +366,21 @@ class ConsumerGroupView(BaseView):
             self.input.update({"namespace": chr(ch)})
         elif ch == ord("c"):
             pass
-        # elif ch == ord("C"): # shift-c
-        #     self.window.addstr(self.max_y -1, self.max_x // 2, 'shift-c')
         elif ch == curses.ascii.EOT: # ctrl-d
-            self.window.addstr(self.max_y -1, self.max_x // 2, 'ctrl-d')
+            self.window.addstr(self.max_y-1, self.max_x // 2, 'ctrl-d')
         elif ch == ord("d"):
             pass
         elif ch == ord("e"):
             pass
+        elif ch == ord("E"):
+            show_empty = not self.input.get("show_empty")
+            self.input.update({"show_empty": show_empty})
         elif ch == ord("s"):
-            show_stable = not self.input.get("show_stable")
-            self.input.update({"show_stable": show_stable})
-            self.window.addstr(self.max_y -1, self.max_x // 2, 's')
-        elif ch == ord("h"):
-            show_high_level = not self.input.get("show_high_level")
-            self.input.update({"show_high_level": show_high_level})
-            self.window.addstr(self.max_y -1, self.max_x // 2, 'h')
+            show_simple = not self.input.get("show_simple")
+            self.input.update({"show_simple": show_simple})
         elif ch == ord("?"):
             pass
 
+        self.window.addstr(self.max_y-1, self.max_x // 2, str(json.dumps(self.input["namespace"])))
+        
         return ch

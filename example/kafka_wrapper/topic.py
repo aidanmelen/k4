@@ -1,9 +1,10 @@
 from kafka_wrapper.topic import Topic
 from cli import editor
 import json
+import os
 
 
-admin_client_config = {"bootstrap.servers": "localhost:9092"}
+admin_client_config = {"bootstrap.servers": os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
 
 topic = Topic(admin_client_config, timeout=3)
 

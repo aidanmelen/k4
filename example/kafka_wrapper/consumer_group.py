@@ -1,50 +1,56 @@
 from kafka_wrapper.consumer_group import ConsumerGroup
 from tabulate import tabulate
 import json
-import textwrap
+import os
 
 
-admin_client_config = {"bootstrap.servers": "kafka:9092"}
+admin_client_config = {"bootstrap.servers": os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
 
 consumer_group = ConsumerGroup(admin_client_config, timeout=5)
 
 print("List all Consumer Groups")
 print(json.dumps(consumer_group.list(), indent=4), "\n\n")
 
-headers = [
-    "GROUP",
-    "TOPIC",
-    "PARTITION",
-    "CURRENT-OFFSET",
-    "LOG-END-OFFSET",
-    "LAG",
-    "CONSUMER-ID",
-    "HOST",
-    "CLIENT-ID",
-]
-group_rows = []
-for group, metadata in consumer_group.describe().items():
-    for m in metadata.get("members", []):
-        for a in m.get("assignments", []):
-            group_rows.append(
-                [
-                    group,
-                    a["topic"],
-                    a["partition"],
-                    a["current_offset"],
-                    a["log_end_offset"],
-                    a["lag"],
-                    textwrap.shorten(m["id"], width=20),
-                    m["host"],
-                    textwrap.shorten(m["client_id"], width=20),
-                ]
-            )
+# headers = [
+#     "GROUP",
+#     "TOPIC",
+#     "PARTITION",
+#     "CURRENT-OFFSET",
+#     "LOG-END-OFFSET",
+#     "LAG",
+#     "CONSUMER-ID",
+#     "HOST",
+#     "CLIENT-ID",
+# ]
+# group_rows = []
+# for group, metadata in consumer_group.describe(show_empty=True, show_simple=True).items():
+#     for m in metadata.get("members", []):
+#         assignments = m.get("assignments", [])
 
-print("Tabulate List all Consumer Groups")
-print(tabulate(group_rows, headers=headers, tablefmt="plain", numalign="left"))
+#         if assignments:
+#             for a in assignments:
+#                 group_rows.append(
+#                     [
+#                         group,
+#                         a["topic"],
+#                         a["partition"],
+#                         a["current_offset"],
+#                         a["log_end_offset"],
+#                         a["lag"],
+#                         m["id"],
+#                         m["host"],
+#                         m["client_id"],
+#                     ]
+#                 )
+#         else:
+#             group_rows.append([group,None,None,None,None,None,m["id"],m["host"],m["client_id"]])
 
-# print("List only STABLE and HIGH-LEVEL Consumer Groups")
-# print(json.dumps(consumer_group.list(only_stable=True, only_high_level=True), indent=4), "\n\n")
+# print("Tabulate List Consumer Groups")
+# print(tabulate(group_rows, headers=headers, tablefmt="plain", numalign="left", maxcolwidths=[None, None, None, None, None, None, 20, 20, 20]))
+
+print("List SIMPLE and EMPTY Consumer Groups")
+all_groups = consumer_group.list(show_empty=True, show_simple=True)
+print(json.dumps(all_groups, indent=4), "\n\n")
 
 # print("Describe all Consumer Groups")
 # print(json.dumps(consumer_group.describe(), indent=4), "\n\n")

@@ -19,7 +19,7 @@ class Topic(KafkaResource):
     def __str__(self):
         return "Topic"
 
-    def list(self, show_internal=True):
+    def list(self, show_internal=False):
         topics_metadata = self._admin_client.list_topics(timeout=self._timeout)
 
         results = [
@@ -36,9 +36,9 @@ class Topic(KafkaResource):
                 for t in results
                 if not (
                     t["name"].startswith("_") or t["name"].startswith("__")
-                    or (t["name"].startswith("connect-") and t["name"].endswith("-offsets"))
-                    or (t["name"].startswith("connect-") and t["name"].endswith("-configs"))
-                    or (t["name"].startswith("connect-") and t["name"].endswith("-status"))
+                    or (t["name"].startswith("connect") and t["name"].endswith("offsets"))
+                    or (t["name"].startswith("connect") and t["name"].endswith("configs"))
+                    or (t["name"].startswith("connect") and t["name"].endswith("status"))
                     or t["name"].startswith("_confluent") or (t["name"] == "schemas")
                 )
             ]
@@ -60,13 +60,14 @@ class Topic(KafkaResource):
         for topic, f in future.items():
             return f.result()
 
-    def describe(self, topic_names=[]):
+    def describe(self, topic_names=[], show_internal=False):
 
         # List all topics metadata when the topics argument is not set
         if topic_names:
             topics_metadata = {
                 topic_name: metadata
                 for topic_name, metadata in self._admin_client.list_topics(
+                    show_internal=show_internal,
                     timeout=self._timeout
                 ).topics.items()
                 if topic_name in topic_names

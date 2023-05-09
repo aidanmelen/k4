@@ -1,9 +1,10 @@
 from kafka_wrapper.broker import Broker
 from cli import editor
 import json
+import os
 
 
-admin_client_config = {"bootstrap.servers": "kafka:9092"}
+admin_client_config = {"bootstrap.servers": os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
 
 broker = Broker(admin_client_config, timeout=3)
 
