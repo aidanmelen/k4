@@ -325,7 +325,7 @@ class TopicView(BaseView):
     def get_ch(self):
         ch = super().get_ch()
 
-        if ch in range(int(ord("0")), int(ord("9"))):
+        if ch in range(int(ord("0")), int(ord("9")) + 1):
             self.input.update({"namespace": chr(ch)})
         elif ch == ord("c"):
             pass
@@ -362,7 +362,7 @@ class ConsumerGroupView(BaseView):
     def get_ch(self):
         ch = super().get_ch()
 
-        if ch in range(int(ord("0")), int(ord("9"))):
+        if ch in range(int(ord("0")), int(ord("9")) + 1):
             self.input.update({"namespace": chr(ch)})
         elif ch == ord("c"):
             pass
